@@ -1,0 +1,49 @@
+package com.jrg_upm.tennisrank.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.jrg_upm.tennisrank.screens.LoginScreen
+import com.jrg_upm.tennisrank.screens.RegisterScreen
+
+
+// Definimos las distintas pantallas a las que podemos navegar a la hora de iniciar sesión:
+@Composable
+fun LogNavigation(navController: NavHostController) {
+    NavHost(navController = navController, startDestination = "login")
+    {
+        // Ruta del login:
+        composable("login"){
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate("home"){
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate("register")
+                }
+            )
+        }
+
+        // Ruta del registro:
+        composable("register") {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    // Tras registrarse, volvemos al login (o podrías ir directo al home)
+                    navController.navigate("login") {
+                        popUpTo("register") { inclusive = true }
+                    }
+                },
+                onNavigateBack = {
+                    navController.popBackStack() // Simplemente vuelve atrás
+                }
+            )
+        }
+         // Ruta del home:
+
+
+    }
+
+}
