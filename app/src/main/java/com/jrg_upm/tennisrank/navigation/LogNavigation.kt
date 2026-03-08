@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.jrg_upm.tennisrank.screens.HomeScreen
 import com.jrg_upm.tennisrank.screens.LoginScreen
 import com.jrg_upm.tennisrank.screens.RegisterScreen
 
@@ -17,7 +18,7 @@ fun LogNavigation(navController: NavHostController) {
         composable("login"){
             LoginScreen(
                 onLoginSuccess = {
-                    navController.navigate("home"){
+                    navController.navigate("menu"){
                         popUpTo("login") { inclusive = true }
                     }
                 },
@@ -41,7 +42,10 @@ fun LogNavigation(navController: NavHostController) {
                 }
             )
         }
-         // Ruta del home:
+         // Ruta del menu que contiene las 4 pestañas
+        composable ("menu") {
+            MenuScreen()
+        }
 
 
     }

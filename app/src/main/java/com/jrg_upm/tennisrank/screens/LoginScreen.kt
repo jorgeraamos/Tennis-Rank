@@ -77,7 +77,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
                 // Botón para registrarse:
                 Button(
                     onClick = {
-                        // Navegamos a la ventana de registro
+                        onNavigateToRegister()
                     },
                     modifier = Modifier.fillMaxWidth()
                 ){
