@@ -1,5 +1,6 @@
 package com.jrg_upm.tennisrank.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrg_upm.tennisrank.logic.loginUser
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -90,8 +92,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
 
             // Añadimos un espacio para los botones:
             Spacer(modifier = Modifier.height(32.dp))
-            Row(){
-
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp) // Añadimos espacio entre los botones
+            ){
                 // Botón para registrarse:
                 Button(
                     onClick = {
@@ -123,35 +127,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
                 }
             }
 
-
         }
 
     }
 }
 
 
-// Conexión con Supabase
-object SupabaseClient {
-    val client = createSupabaseClient(
-        supabaseUrl = "https://nkitnvccvawkbjjghbgp.supabase.co",
-        supabaseKey = "sb_publishable_j_yf5IzhL-bHE4FWTtcqLw_W2biGjoV"
-    ) {
-        install(Auth)
-        install(Postgrest)
-    }
-}
-
-
-// función suspend para no bloquear el resto del proceso
-suspend fun loginUser(email: String, pass: String): Boolean {
-    return try {
-        SupabaseClient.client.auth.signInWith(Email) {
-            this.email = email
-            this.password = pass
-        }
-        true
-    } catch (e: Exception) {
-        e.printStackTrace() // Imprimimos el error
-        false
-    }
-}

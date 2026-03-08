@@ -1,5 +1,6 @@
 package com.jrg_upm.tennisrank.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,19 +26,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrg_upm.tennisrank.logic.registerUser
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
 
 // Función en la que se define la screen del inicio de sesión:
 @Composable
 fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
     // Nos creamos las variables state para el correo y la contraseña que debe introducir el usuario:
+    var user_name by remember{ mutableStateOf("") }
     var user_email by remember{ mutableStateOf("") }
     var password by remember{ mutableStateOf("") }
     var password_repetead by remember{ mutableStateOf("") }
 
+
+    // Al igual que en el login, scope es necesario para que la app no se quede colgada esperando a la función suspend
+
+    val scope = rememberCoroutineScope()
+
     // State para controlar los popUps de error:
     val snackbarHostState = remember{ SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+
 
     // Scaffold para organizar los espacios de la pantalla automáticamente, es el esqueleto de la pantalla
     Scaffold(
@@ -60,6 +70,17 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
             )
             // Ponemos un espacio entre el texto y los campos a rellenar
             Spacer(modifier = Modifier.height(32.dp))
+
+            // Campo para introducir el correo:
+            OutlinedTextField(
+                value = user_name,
+                onValueChange = { user_name = it},
+                label = { Text("Nombre y Apellidos:") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            // Añadimos un espaico entre los campos
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Campo para introducir el correo:
             OutlinedTextField(
@@ -96,7 +117,10 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             // Botón para volver hacia atrás
-            Row(){
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp) // Añadimos espacio entre los botones
+            ){
                 // Botón para volver:
                 Button(
                     onClick = {
@@ -112,7 +136,16 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
                 Button(
                     onClick = {
                         if( password.equals(password_repetead) && password.length >= 8 ){
-                            onRegisterSuccess()
+                            scope.launch {
+                                val success = registerUser(user_email, password, user_name)
+                                if(success){  // Si la verificación ha sido correcta ejecutamos la función de success
+                                    onRegisterSuccess()
+                                }
+                                else{  // En caso contrario mostramos un mensaje de error
+                                    snackbarHostState.showSnackbar("Error: Al registrarse, vuelva a intentarlo")
+                                }
+                            }
+
                         } // En caso contrario mostramos un mensaje de error:
                         else if( ! password.equals(password_repetead)){
                             scope.launch{
@@ -138,8 +171,10 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
 
             }
 
-
         }
 
     }
 }
+
+
+
