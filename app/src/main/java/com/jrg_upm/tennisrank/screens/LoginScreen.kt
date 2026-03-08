@@ -146,8 +146,8 @@ object SupabaseClient {
 suspend fun loginUser(email: String, pass: String): Boolean {
     return try {
         SupabaseClient.client.auth.signInWith(Email) {
-            this.email = email      // Asegúrate de que no haya conflicto de nombres
-            this.password = pass    // Usa 'this.password' para referirte al campo de Supabase
+            this.email = email
+            this.password = pass
         }
         true
     } catch (e: Exception) {
