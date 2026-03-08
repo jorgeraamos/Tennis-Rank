@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import kotlinx.coroutines.launch
 
 // Función en la que se define la screen del inicio de sesión:
 @Composable
@@ -31,8 +40,17 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
     var user_email by remember{ mutableStateOf("") }
     var password by remember{ mutableStateOf("") }
 
+    // scope es necesario para poder crear un entorno seguro donde podemos llamar a una función suspend
+    // para que la app no se quede colgada esperando a esa función
+    val scope = rememberCoroutineScope()
+
+    // Nos creamos un sanckbarHostState para mostrar mensajes en caso de error
+    val snackbarHostState = remember { SnackbarHostState() }
+
     // Scaffold para organizar los espacios de la pantalla automáticamente, es el esqueleto de la pantalla
-    Scaffold()
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    )
     { paddingValues ->
         Column(
             modifier = Modifier
@@ -79,7 +97,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
                     onClick = {
                         onNavigateToRegister()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.weight(1f)
                 ){
                     Text("Registrarse")
                 }
@@ -87,11 +105,20 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
                 // Botón para entrar:
                 Button(
                     onClick = {
-                        // Función que verifica el inicio de sesión:
-                        onLoginSuccess()
+                        scope.launch {
+                            // Función que verifica el inicio de sesión:
+                            val success = loginUser(user_email, password)
+                            if( success ) {  // Si la verificación ha sido correcta ejecutamos la función de success
+                                onLoginSuccess()
+                            }
+                            else{  // En caso contrario mostramos un mensaje de error
+                                snackbarHostState.showSnackbar("Error: Usuario o contraseña incorrectos")
+                            }
+
+                        }
                     },
-                    modifier = Modifier.fillMaxWidth()
-                ){
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text("Iniciar Sesión")
                 }
             }
@@ -99,5 +126,32 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
 
         }
 
+    }
+}
+
+
+// Conexión con Supabase
+object SupabaseClient {
+    val client = createSupabaseClient(
+        supabaseUrl = "https://nkitnvccvawkbjjghbgp.supabase.co",
+        supabaseKey = "sb_publishable_j_yf5IzhL-bHE4FWTtcqLw_W2biGjoV"
+    ) {
+        install(Auth)
+        install(Postgrest)
+    }
+}
+
+
+// función suspend para no bloquear el resto del proceso
+suspend fun loginUser(email: String, pass: String): Boolean {
+    return try {
+        SupabaseClient.client.auth.signInWith(Email) {
+            this.email = email      // Asegúrate de que no haya conflicto de nombres
+            this.password = pass    // Usa 'this.password' para referirte al campo de Supabase
+        }
+        true
+    } catch (e: Exception) {
+        e.printStackTrace() // Imprimimos el error
+        false
     }
 }
