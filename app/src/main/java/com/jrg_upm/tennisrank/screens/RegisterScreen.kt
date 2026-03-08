@@ -27,8 +27,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrg_upm.tennisrank.logic.registerUser
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.launch
 
 // Función en la que se define la screen del inicio de sesión:

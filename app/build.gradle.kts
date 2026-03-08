@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,6 +22,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+
+        // Cargamos las variables de la URL y la key que hemos guardar en local.properties
+        // para la conexión con supabase
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties.getProperty("SUPABASE_URL")}\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"${localProperties.getProperty("SUPABASE_KEY")}\"")
+
     }
 
     buildTypes {
@@ -35,7 +51,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
-        compose = true
+        buildConfig = true
     }
 }
 
@@ -59,9 +75,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.navigation:navigation-compose:2.9.7")
     implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
     // Dependencias para supabase:
     implementation("io.github.jan-tennert.supabase:postgrest-kt:3.0.0") // Para la base de datos
     implementation("io.github.jan-tennert.supabase:auth-kt:3.0.0")      // Para el Login
-    implementation("io.github.jan-tennert.supabase:ktor-client-android:3.0.0")
+    implementation("io.ktor:ktor-client-android:3.0.1")
 }

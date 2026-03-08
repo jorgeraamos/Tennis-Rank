@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.jrg_upm.tennisrank.screens.HomeScreen
 import com.jrg_upm.tennisrank.screens.LoginScreen
 import com.jrg_upm.tennisrank.screens.RegisterScreen
 

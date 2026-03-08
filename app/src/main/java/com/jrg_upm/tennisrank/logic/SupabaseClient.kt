@@ -8,12 +8,15 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_URL
+import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_KEY
+
 
 // Conexión con Supabase
 object SupabaseClient {
     val client = createSupabaseClient(
-        supabaseUrl = "https://nkitnvccvawkbjjghbgp.supabase.co",
-        supabaseKey = "sb_publishable_j_yf5IzhL-bHE4FWTtcqLw_W2biGjoV"
+        supabaseUrl = SUPABASE_URL,  // ambos valores se encuentran en local.properties por seguridad
+        supabaseKey = SUPABASE_KEY
     ) {
         install(Auth)
         install(Postgrest)
