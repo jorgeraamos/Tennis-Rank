@@ -12,6 +12,7 @@ import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_URL
 import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_KEY
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.storage
 
 
 // Conexión con Supabase
@@ -93,5 +94,40 @@ suspend fun getAllPlayers(): List<Jugador> {
     } catch (e: Exception) {
         e.printStackTrace()
         emptyList()
+    }
+}
+
+
+// FUNCION PARA SUBIR LAS FOTOS DE PERFIL PARA CADA USUARIO EN EL STORAGE DE SUPABASE
+suspend fun uploadProfileImage(userId: String, imageBytes: ByteArray): String {
+    val bucket = client.storage.from("profile-images")
+    val fileName = "$userId.jpg"
+
+    // 1. Subir (o actualizar) la imagen
+    bucket.upload(fileName, imageBytes) {
+        upsert = true
+    }
+
+    // 2. Obtener la URL pública para guardarla luego en la tabla
+    return bucket.publicUrl(fileName)
+}
+
+
+// FUNCION PARA ACTUALIZAR EL CAMPO DE LA URL DE LA IMAGEN DE PERFIL DE CADA JUGADOR EN SUPABASE
+suspend fun updateAvatarUrl(idUsuario: String, nuevaUrl: String) {
+    try {
+        // Seleccionamos de la tabla jugadores y actualizamos el campo avatar_url por la nueva url
+        client.postgrest["jugadores"].update(
+            {
+                // El nombre entre comillas debe ser EXACTO al de tu tabla en Supabase
+                set("avatar_url", nuevaUrl)
+            }
+        ) {
+            filter {  // Filtramos por id para actualizar solo el campo del usuario actual
+                eq("id", idUsuario)
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }

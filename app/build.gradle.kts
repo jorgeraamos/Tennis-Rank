@@ -78,7 +78,11 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
     // Dependencias para supabase:
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt:3.0.0") // Para la base de datos
     implementation("io.github.jan-tennert.supabase:auth-kt:3.0.0")      // Para el Login
-    implementation("io.ktor:ktor-client-android:3.0.1")
+    // Para el módulo de Storage:
+    implementation("io.github.jan-tennert.supabase:storage-kt:3.0.3")
+    // Para que se puedan mostrar imágenes de internet, ya que las fotos de perfil se almacenarán en supabase
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }
