@@ -20,6 +20,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.jrg_upm.tennisrank.logic.Jugador
 import com.jrg_upm.tennisrank.screens.HistoricalScreen
 import com.jrg_upm.tennisrank.screens.HomeScreen
 import com.jrg_upm.tennisrank.screens.ProfileScreen
@@ -30,23 +31,23 @@ import kotlin.toString
 // Gestor de Pantallas dentro del Menú de la App:
 // navController es el objeto que ejecuta las órdenes de ir de una pantalla a otra
 @Composable
-fun Navigate(navController: NavHostController) {
+fun Navigate(navController: NavHostController, jugadorActual: Jugador?) {
     NavHost(navController = navController, startDestination = "home"){
         // Para cada ruta definimos la función que se ejecuta
-        composable("home"){
-            HomeScreen()
+        composable("home", ){
+            HomeScreen(jugadorActual)
         }
 
-        composable("historical"){
+        composable("historical", ){
             HistoricalScreen()
         }
 
-        composable("statistics"){
+        composable("statistics", ){
             StatisticsScreen()
         }
 
-        composable("profile"){
-            ProfileScreen()
+        composable("profile", ){
+            ProfileScreen(jugadorActual)
         }
     }
 

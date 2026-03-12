@@ -11,8 +11,16 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.jrg_upm.tennisrank.logic.Jugador
+import com.jrg_upm.tennisrank.logic.getAllPlayers
+import com.jrg_upm.tennisrank.logic.getCurrentPlayer
 import com.jrg_upm.tennisrank.ui.theme.TennisRankTheme
 
 @Composable
@@ -22,6 +30,17 @@ fun MenuScreen() {
     TennisRankTheme() {
         // Objeto que controla la navegación, debe ser el mismo para la barra de botones como para el NavHost que cambia las pantallas
         val navController = rememberNavController()
+        // Variable para obtener el usuario actual que está utilizando la app
+        var jugadorActual by remember { mutableStateOf<Jugador?>(null) }
+
+        // Conectamos con supabase para obtener el jugadorActual
+        // Launched Effect indica que se ejecute solo cuando se redibuje la pantalla, para no tener que
+        // llamar infinitas veces al getCurrentPlayer y no colapsar la base de datos a llamadas
+        LaunchedEffect(Unit) {
+            // Cargamos el jugador actual
+            jugadorActual = getCurrentPlayer()
+        }
+
         // Scaffold es el componente que organiza los espacios de la pantalla automáticamente, es el esqueleto de la pantalla
         Scaffold(
             bottomBar = {
@@ -67,7 +86,7 @@ fun MenuScreen() {
             // Es vital usar paddingValues para que el contenido no se tape con los elementos fijos del Scaffold
             Column(modifier = Modifier.padding(paddingValues)) {
                 // Cambiamos visualmente de pantalla
-                Navigate(navController = navController)
+                Navigate(navController = navController, jugadorActual = jugadorActual)
             }
         }
     }

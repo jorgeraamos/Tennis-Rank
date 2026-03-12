@@ -34,19 +34,15 @@ import com.jrg_upm.tennisrank.logic.getAllPlayers
 import com.jrg_upm.tennisrank.logic.getCurrentPlayer
 
 @Composable
-fun HomeScreen() {
-    // Variable de estado para el nombre
-    var nombreJugador by remember { mutableStateOf("Cargando...") }
+fun HomeScreen(jugadorActual: Jugador?) {
+    // Nombre del jugador, no debería ser null pero por si acaso ponemos cargando en caso de que devuelva null:
+    val nombreJugador = jugadorActual?.nombre ?: "Cargando..."
     // Variable estado para la lista de jugadores del ranking
     var listaRanking by remember {mutableStateOf<List<Jugador>>( emptyList() )}
 
     // Launched Effect indica que se ejecute solo cuando se redibuje la pantalla, para no tener que
     // llamar infinitas veces al getCurrentPlayer y no colapsar la base de datos a llamadas
     LaunchedEffect(Unit) {
-        // Cargamos el jugador actual
-        val jugadorActual = getCurrentPlayer()
-        nombreJugador = jugadorActual?.nombre ?: "Invitado"
-
         // Cargamos todos los jugadores para el ranking
         listaRanking = getAllPlayers()
     }
@@ -62,7 +58,7 @@ fun HomeScreen() {
         // En las Lazy Column el contenido estático se debe de poner dentro de item
         item {
             Text(
-                text = "Bienvenido $nombreJugador!",
+                text = "Bienvenido ${nombreJugador}!",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 20.dp),  // especificamos la altura
@@ -102,7 +98,7 @@ fun HomeScreen() {
         }
 
         items(listaRanking) { jugador ->  // función lambda
-            var esUsuarioActual = jugador.nombre.equals(nombreJugador)
+            var esUsuarioActual = jugador.id == jugadorActual?.id
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -113,7 +109,7 @@ fun HomeScreen() {
                 // puedes usar el índice de la lista + 1
                 // Además, si destacamos la fila del usuario que está usando la app
                 Text(
-                    text = "${jugador.posicion_ranking}. ${jugador.nombre}",
+                    text = "${jugador.posicionRanking}. ${jugador.nombre}",
                     fontWeight = if(esUsuarioActual) FontWeight.ExtraBold else FontWeight.Normal,
                     color = if (esUsuarioActual) Color.Yellow else Color.White
                 )
