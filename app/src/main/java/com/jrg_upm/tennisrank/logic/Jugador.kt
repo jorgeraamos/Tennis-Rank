@@ -15,5 +15,7 @@ data class Jugador(
     @SerialName("mano_dominante") val manoDominante: String? = null,
     @SerialName("estilo_juego") val estiloJuego: String? = null,
     @SerialName("mejor_golpe") val mejorGolpe: String? = null,
+    @SerialName("superficie_favorita") val superficieFavorita: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null
+
 )

@@ -23,6 +23,7 @@ object SupabaseClient {
     ) {
         install(Auth)
         install(Postgrest)
+        install(io.github.jan.supabase.storage.Storage)
     }
 }
 
@@ -128,6 +129,35 @@ suspend fun updateAvatarUrl(idUsuario: String, nuevaUrl: String) {
             }
         }
     } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
+
+//FUNCION PARA ACTUALIZAR LA INFORMACIÓN DE CADA JUGADOR
+suspend fun updatePlayerData(
+    idUsuario: String,
+    nombre: String,
+    nacionalidad: String,
+    fechaNacimiento: String,
+    manoDominante: String,
+    estilo: String,
+    mejorGolpe: String
+){
+    try{  // Datos de la tabla jugadores
+        client.postgrest["jugadores"].update(
+            {  // Campos a actualizar
+                set("nombre", nombre)
+                set("nacionalidad", nacionalidad)
+                set("fecha_nacimiento", fechaNacimiento)
+                set("mano_dominante", manoDominante)
+                set("estilo_juego", estilo)
+                set("mejor_golpe", mejorGolpe)
+            }
+        ){
+            filter{eq("id", idUsuario)}
+        }
+    } catch( e: Exception){
         e.printStackTrace()
     }
 }

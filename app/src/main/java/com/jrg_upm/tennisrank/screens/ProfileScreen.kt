@@ -1,6 +1,7 @@
 package com.jrg_upm.tennisrank.screens
 
 import android.net.Uri
+import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -19,11 +20,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,16 +54,63 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.jrg_upm.tennisrank.logic.updateAvatarUrl
+import com.jrg_upm.tennisrank.logic.updatePlayerData
 import com.jrg_upm.tennisrank.logic.uploadProfileImage
 import kotlinx.coroutines.launch
 // Imports para calcular la edad
 import java.text.SimpleDateFormat
 import java.util.*
 
-
+@OptIn(ExperimentalMaterial3Api::class)  // Necesario ya que hay componentes experimentales en esta función: rememberModalBottomSheetState() y ModalBottomSheet
 @Composable
 fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está ejecutando la app
-    // Variable para poder subir la foto de perfil de cada jugador:
+    // Variables para controlar si se ve o no la pestaña para editar el perfil
+    val sheetState = rememberModalBottomSheetState()
+    var mostrarSheet by remember { mutableStateOf(false) }
+
+
+    // Variables para que el usuario pueda editar dichos campos:
+    var nombreEdit by remember(jugadorActual) { mutableStateOf(jugadorActual?.nombre ?: "") }
+    var nacionalidadEdit by remember(jugadorActual) {
+        mutableStateOf(
+            jugadorActual?.nacionalidad ?: ""
+        )
+    }
+    var fechaNacimientoEdit by remember(jugadorActual) {
+        mutableStateOf(jugadorActual?.fechaNacimiento ?: "")
+    }
+
+    var manoDominanteEdit by remember(jugadorActual) {
+        mutableStateOf(
+            jugadorActual?.manoDominante ?: ""
+        )
+    }
+    var estiloJuegoEdit by remember(jugadorActual) {
+        mutableStateOf(
+            jugadorActual?.estiloJuego ?: ""
+        )
+    }
+    var mejorGolpeEdit by remember(jugadorActual) {
+        mutableStateOf(
+            jugadorActual?.mejorGolpe ?: ""
+        )
+    }
+
+
+
+    // Variables para escoger la fecha para que los usuarios puedan editar su fecha de nacimiento:
+    val datePickerState = rememberDatePickerState()  // fecha que seleccionará el usuario
+    var mostrarCalendario by remember { mutableStateOf(false) }  // variable para indicar si se debe mostrar el calendario
+
+
+    // Variable de estado para actualizar la imagen del jugador
+    // Si el jugador ya tiene imagen la cogemos, en caso contrario será null
+    var imagenTemporalUrl by remember(jugadorActual?.avatarUrl) {
+        mutableStateOf(jugadorActual?.avatarUrl)
+    }
+
+
+    // Variables para poder subir la foto de perfil de cada jugador:
     // Permiso del "contexto" que necesita la app para poder leer archivos del sistema:
     val context = LocalContext.current
     // Usamos scope ya que la subida de la imagen a Supabase se hace de manera suspend
@@ -57,23 +122,33 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
         uri?.let {
             // Convertimos la URI en un ByteArray para subirlo
             val inputStream = context.contentResolver.openInputStream(it)
-            val bytes = inputStream?.readBytes()  // Leemos toda la información binaria de la foto y la convertimos en un ByteArray
+            val bytes =
+                inputStream?.readBytes()  // Leemos toda la información binaria de la foto y la convertimos en un ByteArray
             if (bytes != null && jugadorActual != null) {
                 coroutineScope.launch {
                     // Subimos a Supabase Storage
                     val url = uploadProfileImage(jugadorActual.id, bytes)
+                    // Actualizamos nuestra variable con la nueva url:
+                    // Le añadimos la fecha ya que si tiene el mismo nombre que la anterior la descartaría.
+                    imagenTemporalUrl = "$url?t=${System.currentTimeMillis()}"
                     // Actualizamos el campo avatar_url de la tabla jugadores en Supabase
-                    updateAvatarUrl(jugadorActual.id, url)
+                    updateAvatarUrl(
+                        jugadorActual.id,
+                        url
+                    )  // se ejecuta en 2º plano, por eso lo ponemos después
                 }
             }
         }
     }
+
+    // Componentes de la ProfileScreen:
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         // Para la foto de perfil ponemos o bien la foto si la ha puesto el usuario o su inicial en caso contrario
         Box(
             modifier = Modifier
@@ -84,16 +159,16 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
             contentAlignment = Alignment.Center
         ) {
             // Si hay foto guardada la mostramos
-            if (jugadorActual?.avatarUrl != null) {
+            if (imagenTemporalUrl != null) {
                 // Usamos AsyncImage de Coil para cargar la foto de Supabase
                 AsyncImage(
-                    model = jugadorActual.avatarUrl,
+                    model = imagenTemporalUrl,
                     contentDescription = "Foto de perfil",
                     modifier = Modifier.fillMaxSize(),
                     // Para que rellene el círculo sin deformarse en caso de que la foto sea rectangular
                     contentScale = ContentScale.Crop
                 )
-            }else {
+            } else {
                 // Si no hay foto, mostramos la inicial de su nombre
                 Text(
                     text = jugadorActual?.nombre?.firstOrNull()?.toString() ?: "?",
@@ -102,14 +177,19 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
                 )
             }
         }
+
+
         // Mostramos el nombre del jugador debajo de su imagen
         Text(
             text = jugadorActual?.nombre ?: "Nombre",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(top = 16.dp)
         )
+
+
         // Ponemos un espacio entre medias
         Spacer(modifier = Modifier.height(24.dp))
+
 
         // Info Técnica en una Card
         Card(
@@ -119,9 +199,193 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
             Column(modifier = Modifier.padding(16.dp)) {
                 ProfileItem("Nacionalidad", jugadorActual?.nacionalidad ?: "No definida")
                 ProfileItem("Edad", calcularEdad(jugadorActual?.fechaNacimiento) ?: "--")
-                ProfileItem("Mano", jugadorActual?.manoDominante ?: "No definida")
+                ProfileItem("Mano Dominante", jugadorActual?.manoDominante ?: "No definida")
                 ProfileItem("Estilo", jugadorActual?.estiloJuego ?: "No definido")
                 ProfileItem("Golpe Maestro", jugadorActual?.mejorGolpe ?: "No definido")
+                ProfileItem(
+                    "Superficie Favorita",
+                    jugadorActual?.superficieFavorita ?: "No definida"
+                )
+            }
+        }
+
+        // Añadimos un espacio para poner los botones
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Botón para que el usuario abra la pestaña de edición de perfil
+        Button(onClick = { mostrarSheet = true }) {
+            Text("Editar Perfil")
+        }
+
+        // PESTAÑA QUE SE ABRE AL PULAR EL BOTÓN DE EDITAR PERFIL PARA SELECCIONAR LAS OPCIONES DE CADA CAMPO
+        if (mostrarSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { mostrarSheet = false },
+                sheetState = sheetState,
+                containerColor = Color(0xFF1C1C1C)
+            ) {
+                // Contenido de la pestaña de edición del perfil
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Editar Mi Perfil",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Variable nombre
+                    OutlinedTextField(
+                        value = nombreEdit,
+                        onValueChange = { nombreEdit = it },
+                        label = { Text("Nombre") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Variable nacionalidad
+                    OutlinedTextField(
+                        value = nacionalidadEdit,
+                        onValueChange = { nacionalidadEdit = it },
+                        label = { Text("Nacionalidad") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Campo de texto que al pulsar abre el calendario
+                    Box(modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { mostrarCalendario = true }
+                    ){
+                        OutlinedTextField(
+                            value = fechaNacimientoEdit,
+                            onValueChange = { },
+                            readOnly = true,  // Queremos que solo elija una fecha del calendario, no que escriba
+                            label = { Text("Fecha de Nacimiento") },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = false,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                disabledBorderColor = MaterialTheme.colorScheme.outline,
+                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        )
+                        // CALENDARIO PARA ELEGIR LA FECHA
+                        if (mostrarCalendario) {
+                            DatePickerDialog(  // Calendario a mostrar
+                                onDismissRequest = { mostrarCalendario = false },  // Si el usuario toca fuera de la ventana se cierra
+                                confirmButton = {  // Botón para confirmar la fecha seleccionada
+                                    TextButton(onClick = {  // Text Botton para que sea plano
+                                        // Cogemos la fecha seleccionada
+                                        val fechaMillis = datePickerState.selectedDateMillis
+                                        if (fechaMillis != null) {
+                                            // Formateamos para Supabase (yyyy-MM-dd)
+                                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                            // Ajustamos la zona horaria para evitar desfases de días
+                                            formatter.timeZone = TimeZone.getTimeZone("UTC")
+                                            // Actualizamos nuestra variable de estado
+                                            fechaNacimientoEdit = formatter.format(Date(fechaMillis))
+                                        } // Cerramos el botón
+                                        mostrarCalendario = false
+                                    }) { Text("Aceptar") }
+                                },
+                                dismissButton = {  // Botón para cancelar
+                                    TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") }
+                                }
+                            ) {
+                                DatePicker(state = datePickerState)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Editar mano dominante con menu depegable:
+                    SelectorOpciones(
+                        label = "Mano Dominante",
+                        seleccionado = manoDominanteEdit,
+                        opciones = listOf("Derecha", "Izquierda"),
+                        onOptionSelected = { manoDominanteEdit = it } // Actualizamos la variable
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Editar estilo de juego con menu depegable:
+                    SelectorOpciones(
+                        label = "Estilo de Juego",
+                        seleccionado = estiloJuegoEdit,
+                        opciones = listOf(
+                            "Agresivo",
+                            "Defensivo",
+                            "Saque y Volea",
+                            "Contragolpeador"
+                        ),
+                        onOptionSelected = { estiloJuegoEdit = it }
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Editar mejor golpe con menu depegable:
+                    SelectorOpciones(
+                        label = "Golpe Maestro",
+                        seleccionado = mejorGolpeEdit,
+                        opciones = listOf("Drive", "Revés", "Saque", "Volea", "Dejada"),
+                        onOptionSelected = { mejorGolpeEdit = it }
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp) // Añadimos espacio entre los botones
+                    ) {
+                        // Botón de Volver
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                // Cerramos la pestaña de edición
+                                coroutineScope.launch {
+                                    sheetState.hide()
+                                }.invokeOnCompletion {
+                                    // Para comunicar al compose de que no debe mostrar el Sheet
+                                    if (!sheetState.isVisible) mostrarSheet = false
+                                }
+                            }
+                        ) {
+                            Text("Volver")
+                        }
+
+                        // Boton para guardar los datos en Supabase
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                coroutineScope.launch {
+                                    // Funcion para llamar a Supabase para guardar
+                                    // Ponemos las !! porque sabemos que el usuario tiene id
+                                    updatePlayerData(
+                                        idUsuario = jugadorActual!!.id,
+                                        nombre = nombreEdit,
+                                        nacionalidad = nacionalidadEdit,
+                                        fechaNacimiento = fechaNacimientoEdit,
+                                        manoDominante = manoDominanteEdit,
+                                        estilo = estiloJuegoEdit,
+                                        mejorGolpe = mejorGolpeEdit
+                                    )
+                                    // 2. Cerrar la pestaña
+                                    sheetState.hide()
+                                }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) mostrarSheet = false
+                                }
+                            }
+                        ) {
+                            Text("Guardar Cambios")
+                        }
+                    }
+                }
             }
         }
     }
@@ -158,13 +422,64 @@ fun calcularEdad(fechaNacimiento: String?): String? {
         if (hoy.get(Calendar.MONTH) < nacimiento.get(Calendar.MONTH)) {
             edad--
         } else if (hoy.get(Calendar.MONTH) == nacimiento.get(Calendar.MONTH)) {
-            if (hoy.get(Calendar.DAY_OF_MONTH) >= nacimiento.get(Calendar.DAY_OF_MONTH)) {
+            if (hoy.get(Calendar.DAY_OF_MONTH) < nacimiento.get(Calendar.DAY_OF_MONTH)) {
                 edad--
             }
         }
         "$edad años"
     } catch (e: Exception) {
         null
+    }
+}
+
+
+// Función general para poder desplegar las opciones a elegir de un determinado campo
+@OptIn(ExperimentalMaterial3Api::class)  // Indica que es un compenente nuevo en la librería y pueden haber cambios
+@Composable
+fun SelectorOpciones(
+    label: String,  // Campo que queremos editar
+    seleccionado: String,
+    opciones: List<String>,  // Lista de opciones
+    onOptionSelected: (String) -> Unit  // Callback para devolver la opción elegida
+) {
+    // variable de estado para indicar si hay que expandir las opciones o no
+    var expandido by remember { mutableStateOf(false) }
+
+    // Caja donde estará el menú de selección
+    ExposedDropdownMenuBox(
+        expanded = expandido,
+        onExpandedChange = { expandido = !expandido },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        OutlinedTextField(
+            value = seleccionado,
+            onValueChange = {},
+            readOnly = true,  // Solo queremos que el usuario vea las opciones y que las seleccione, no que pueda escribir
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+        )
+
+        // Menú de selección
+        ExposedDropdownMenu(
+            expanded = expandido,
+            onDismissRequest = { expandido = false }
+        ) {
+            opciones.forEach { opcion ->
+                DropdownMenuItem(
+                    text = { Text(opcion) },
+                    onClick = {
+                        onOptionSelected(opcion) // Avisamos del cambio
+                        expandido = false
+                    }
+                )
+            }
+        }
     }
 }
 
