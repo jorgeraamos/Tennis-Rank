@@ -1,6 +1,6 @@
-package com.jrg_upm.tennisrank.logic
+package com.jrg_upm.tennisrank.model
 
-import com.jrg_upm.tennisrank.logic.SupabaseClient.client
+import com.jrg_upm.tennisrank.model.SupabaseClient.client
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email

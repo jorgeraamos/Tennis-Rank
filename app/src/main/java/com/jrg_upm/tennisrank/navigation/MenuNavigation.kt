@@ -7,8 +7,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,9 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.jrg_upm.tennisrank.logic.Jugador
-import com.jrg_upm.tennisrank.logic.getAllPlayers
-import com.jrg_upm.tennisrank.logic.getCurrentPlayer
+import com.jrg_upm.tennisrank.model.Jugador
+import com.jrg_upm.tennisrank.model.getCurrentPlayer
 import com.jrg_upm.tennisrank.ui.theme.TennisRankTheme
 
 @Composable

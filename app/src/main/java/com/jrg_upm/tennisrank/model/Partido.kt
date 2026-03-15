@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.logic
+package com.jrg_upm.tennisrank.model
 
 data class Partido(
     val rival: String,

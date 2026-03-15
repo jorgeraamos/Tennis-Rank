@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.screens
+package com.jrg_upm.tennisrank.view
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jrg_upm.tennisrank.logic.registerUser
+import com.jrg_upm.tennisrank.model.registerUser
 import kotlinx.coroutines.launch
 
 // Función en la que se define la screen del inicio de sesión:

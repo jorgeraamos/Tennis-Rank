@@ -1,7 +1,5 @@
 package com.jrg_upm.tennisrank.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -10,7 +8,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -20,13 +17,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.jrg_upm.tennisrank.logic.Jugador
-import com.jrg_upm.tennisrank.screens.HistoricalScreen
-import com.jrg_upm.tennisrank.screens.HomeScreen
-import com.jrg_upm.tennisrank.screens.ProfileScreen
-import com.jrg_upm.tennisrank.screens.StatisticsScreen
-import kotlin.compareTo
-import kotlin.toString
+import com.jrg_upm.tennisrank.model.Jugador
+import com.jrg_upm.tennisrank.view.HistoricalScreen
+import com.jrg_upm.tennisrank.view.HomeScreen
+import com.jrg_upm.tennisrank.view.ProfileScreen
+import com.jrg_upm.tennisrank.view.StatisticsScreen
 
 // Gestor de Pantallas dentro del Menú de la App:
 // navController es el objeto que ejecuta las órdenes de ir de una pantalla a otra

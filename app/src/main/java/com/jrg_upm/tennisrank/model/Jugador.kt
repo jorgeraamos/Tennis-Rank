@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.logic
+package com.jrg_upm.tennisrank.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

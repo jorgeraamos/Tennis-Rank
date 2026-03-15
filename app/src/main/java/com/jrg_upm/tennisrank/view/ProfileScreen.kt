@@ -1,7 +1,6 @@
-package com.jrg_upm.tennisrank.screens
+package com.jrg_upm.tennisrank.view
 
 import android.net.Uri
-import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,7 +21,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -46,16 +44,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.jrg_upm.tennisrank.logic.Jugador
+import com.jrg_upm.tennisrank.model.Jugador
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.jrg_upm.tennisrank.logic.updateAvatarUrl
-import com.jrg_upm.tennisrank.logic.updatePlayerData
-import com.jrg_upm.tennisrank.logic.uploadProfileImage
+import com.jrg_upm.tennisrank.model.updateAvatarUrl
+import com.jrg_upm.tennisrank.model.updatePlayerData
+import com.jrg_upm.tennisrank.model.uploadProfileImage
 import kotlinx.coroutines.launch
 // Imports para calcular la edad
 import java.text.SimpleDateFormat
@@ -71,6 +69,7 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
 
     // Variables para que el usuario pueda editar dichos campos:
     var nombreEdit by remember(jugadorActual) { mutableStateOf(jugadorActual?.nombre ?: "") }
+
     var nacionalidadEdit by remember(jugadorActual) {
         mutableStateOf(
             jugadorActual?.nacionalidad ?: ""
@@ -85,6 +84,7 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
             jugadorActual?.manoDominante ?: ""
         )
     }
+
     var estiloJuegoEdit by remember(jugadorActual) {
         mutableStateOf(
             jugadorActual?.estiloJuego ?: ""
@@ -96,25 +96,20 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
         )
     }
 
-
-
-    // Variables para escoger la fecha para que los usuarios puedan editar su fecha de nacimiento:
-    val datePickerState = rememberDatePickerState()  // fecha que seleccionará el usuario
-    var mostrarCalendario by remember { mutableStateOf(false) }  // variable para indicar si se debe mostrar el calendario
-
-
     // Variable de estado para actualizar la imagen del jugador
     // Si el jugador ya tiene imagen la cogemos, en caso contrario será null
     var imagenTemporalUrl by remember(jugadorActual?.avatarUrl) {
         mutableStateOf(jugadorActual?.avatarUrl)
     }
 
-
     // Variables para poder subir la foto de perfil de cada jugador:
+
     // Permiso del "contexto" que necesita la app para poder leer archivos del sistema:
     val context = LocalContext.current
+
     // Usamos scope ya que la subida de la imagen a Supabase se hace de manera suspend
     val coroutineScope = rememberCoroutineScope()
+
     // Configuración del launcher(Objeto que abre la galería para que el usuario escoja la imagen que desee):
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()  // Para indicar que se quiere que el usuario elija una imagen
@@ -149,49 +144,13 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // Para la foto de perfil ponemos o bien la foto si la ha puesto el usuario o su inicial en caso contrario
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .background(Color.Yellow, shape = CircleShape)
-                .clip(CircleShape)
-                .clickable { launcher.launch("image/*") },  // Aquí se activa el selector de la imagen
-            contentAlignment = Alignment.Center
-        ) {
-            // Si hay foto guardada la mostramos
-            if (imagenTemporalUrl != null) {
-                // Usamos AsyncImage de Coil para cargar la foto de Supabase
-                AsyncImage(
-                    model = imagenTemporalUrl,
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier.fillMaxSize(),
-                    // Para que rellene el círculo sin deformarse en caso de que la foto sea rectangular
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                // Si no hay foto, mostramos la inicial de su nombre
-                Text(
-                    text = jugadorActual?.nombre?.firstOrNull()?.toString() ?: "?",
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-
-        // Mostramos el nombre del jugador debajo de su imagen
-        Text(
-            text = jugadorActual?.nombre ?: "Nombre",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(top = 16.dp)
-        )
-
+        // Llamamos a la función donde se definen las componentes que muestran la foto de perfil y el nombre del jugador
+        ProfileHeader(nombre = jugadorActual?.nombre, avatarUrl = imagenTemporalUrl, onImageClick = {launcher.launch("image/*")})
 
         // Ponemos un espacio entre medias
         Spacer(modifier = Modifier.height(24.dp))
 
-
-        // Info Técnica en una Card
+        // Mostramos los datos del juagodr en una Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(4.dp)
@@ -202,10 +161,7 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
                 ProfileItem("Mano Dominante", jugadorActual?.manoDominante ?: "No definida")
                 ProfileItem("Estilo", jugadorActual?.estiloJuego ?: "No definido")
                 ProfileItem("Golpe Maestro", jugadorActual?.mejorGolpe ?: "No definido")
-                ProfileItem(
-                    "Superficie Favorita",
-                    jugadorActual?.superficieFavorita ?: "No definida"
-                )
+                ProfileItem("Superficie Favorita", jugadorActual?.superficieFavorita ?: "No definida")
             }
         }
 
@@ -217,7 +173,7 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
             Text("Editar Perfil")
         }
 
-        // PESTAÑA QUE SE ABRE AL PULAR EL BOTÓN DE EDITAR PERFIL PARA SELECCIONAR LAS OPCIONES DE CADA CAMPO
+        // PESTAÑA QUE SE ABRE AL PULSAR EL BOTÓN DE EDITAR PERFIL PARA PODER ELEGIR Y EDITAR LOS CAMPOS QUE EL USUARIO DESEE
         if (mostrarSheet) {
             ModalBottomSheet(
                 onDismissRequest = { mostrarSheet = false },
@@ -258,52 +214,9 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Campo de texto que al pulsar abre el calendario
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { mostrarCalendario = true }
-                    ){
-                        OutlinedTextField(
-                            value = fechaNacimientoEdit,
-                            onValueChange = { },
-                            readOnly = true,  // Queremos que solo elija una fecha del calendario, no que escriba
-                            label = { Text("Fecha de Nacimiento") },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = false,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                                disabledBorderColor = MaterialTheme.colorScheme.outline,
-                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        )
-                        // CALENDARIO PARA ELEGIR LA FECHA
-                        if (mostrarCalendario) {
-                            DatePickerDialog(  // Calendario a mostrar
-                                onDismissRequest = { mostrarCalendario = false },  // Si el usuario toca fuera de la ventana se cierra
-                                confirmButton = {  // Botón para confirmar la fecha seleccionada
-                                    TextButton(onClick = {  // Text Botton para que sea plano
-                                        // Cogemos la fecha seleccionada
-                                        val fechaMillis = datePickerState.selectedDateMillis
-                                        if (fechaMillis != null) {
-                                            // Formateamos para Supabase (yyyy-MM-dd)
-                                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                                            // Ajustamos la zona horaria para evitar desfases de días
-                                            formatter.timeZone = TimeZone.getTimeZone("UTC")
-                                            // Actualizamos nuestra variable de estado
-                                            fechaNacimientoEdit = formatter.format(Date(fechaMillis))
-                                        } // Cerramos el botón
-                                        mostrarCalendario = false
-                                    }) { Text("Aceptar") }
-                                },
-                                dismissButton = {  // Botón para cancelar
-                                    TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") }
-                                }
-                            ) {
-                                DatePicker(state = datePickerState)
-                            }
-                        }
-                    }
+                    DatePickerField(
+                        fechaSeleccionada = fechaNacimientoEdit,
+                        onFechaCambiada = {fechaNacimientoEdit = it} )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -391,6 +304,49 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
     }
 }
 
+
+// Función para definir la foto de perfil del jugador
+@Composable
+fun ProfileHeader(nombre: String?, avatarUrl: String?, onImageClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(Color.Yellow, shape = CircleShape)
+                .clip(CircleShape)
+                .clickable { onImageClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            // Para la foto de perfil ponemos o bien la foto si la ha puesto el usuario o su inicial en caso contrario
+            if (avatarUrl != null) {
+                AsyncImage(  // Usamos AsyncImage de Coil para cargar la foto de Supabase
+                    model = avatarUrl,
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Text(
+                    text = nombre?.firstOrNull()?.toString() ?: "?",
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        // Mostramos el nombre del jugador debajo de su imagen
+        Text(
+            text = nombre ?: "Nombre",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(top = 16.dp)
+        )
+    }
+}
+
+
+
+
+
+// Función que define los items para mostrar los datos de cada campo
 @Composable
 fun ProfileItem(label: String, value: String) {
     Row(
@@ -405,6 +361,58 @@ fun ProfileItem(label: String, value: String) {
     HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
 }
 
+
+
+// Función para mostrar el calendario y que el usuario pueda editar su fecha de nacimiento
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerField(fechaSeleccionada: String, onFechaCambiada: (String) -> Unit) {
+    var mostrarCalendario by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    // Campo de texto que al pulsar abre el calendario
+    Box(modifier = Modifier.fillMaxWidth().clickable { mostrarCalendario = true }) {
+        OutlinedTextField(
+            value = fechaSeleccionada,
+            onValueChange = { },
+            readOnly = true,  // Queremos que solo elija una fecha del calendario, no que escriba
+            label = { Text("Fecha de Nacimiento") },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = false,
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                disabledBorderColor = MaterialTheme.colorScheme.outline
+            )
+        )
+        // CALENDARIO PARA ELEGIR LA FECHA
+        if (mostrarCalendario) {
+            DatePickerDialog(  // Calendario a mostrar
+                onDismissRequest = { mostrarCalendario = false }, // Si el usuario toca fuera de la ventana se cierra
+                confirmButton = {  // Botón para confirmar la fecha seleccionada
+                    TextButton(onClick = {  // Text Botton para que el botón sea plano
+                        datePickerState.selectedDateMillis?.let {  // Cogemos la fecha seleccionada
+                            // Formateamos para Supabase (yyyy-MM-dd)
+                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+                                timeZone = TimeZone.getTimeZone("UTC")
+                            }  // Actualizamos nuestra variable de estado
+                            onFechaCambiada(formatter.format(Date(it)))
+                        }  // Cerramos el botón
+                        mostrarCalendario = false
+                    }) { Text("Aceptar") }
+                },
+                dismissButton = {  // Botón para cancelar
+                    TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+    }
+}
+
+
+
+// FUNCION PARA CALCULAR LA EDAD DE CADA JUGADOR SEGÚN SU FECHA DE NACIMIENTO
 fun calcularEdad(fechaNacimiento: String?): String? {
     if (fechaNacimiento == null) return null
     return try {

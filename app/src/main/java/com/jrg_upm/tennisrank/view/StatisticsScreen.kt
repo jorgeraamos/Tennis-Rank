@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.screens
+package com.jrg_upm.tennisrank.view
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

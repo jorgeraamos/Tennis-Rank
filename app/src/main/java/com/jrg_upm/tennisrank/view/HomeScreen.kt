@@ -1,8 +1,6 @@
-package com.jrg_upm.tennisrank.screens
+package com.jrg_upm.tennisrank.view
 
-import android.R.attr.fontWeight
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,12 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.jrg_upm.tennisrank.logic.Jugador
-import com.jrg_upm.tennisrank.logic.getAllPlayers
-import com.jrg_upm.tennisrank.logic.getCurrentPlayer
+import com.jrg_upm.tennisrank.model.Jugador
+import com.jrg_upm.tennisrank.model.getAllPlayers
 
 @Composable
 fun HomeScreen(jugadorActual: Jugador?) {
