@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.view
+package com.jrg_upm.tennisrank.ui.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

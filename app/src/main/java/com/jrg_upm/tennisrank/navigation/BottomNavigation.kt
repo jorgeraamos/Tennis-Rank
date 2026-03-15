@@ -19,10 +19,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.jrg_upm.tennisrank.model.Jugador
-import com.jrg_upm.tennisrank.view.HistoricalScreen
-import com.jrg_upm.tennisrank.view.HomeScreen
-import com.jrg_upm.tennisrank.view.ProfileScreen
-import com.jrg_upm.tennisrank.view.StatisticsScreen
+import com.jrg_upm.tennisrank.ui.historical.HistoricalScreen
+import com.jrg_upm.tennisrank.ui.home.HomeScreen
+import com.jrg_upm.tennisrank.ui.profile.ProfileScreen
+import com.jrg_upm.tennisrank.ui.statistics.StatisticsScreen
 import com.jrg_upm.tennisrank.viewModel.ProfileViewModel
 import com.jrg_upm.tennisrank.viewModel.ProfileViewModelFactory
 

@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.view
+package com.jrg_upm.tennisrank.ui.profile
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,20 +20,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,12 +43,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.jrg_upm.tennisrank.ui.components.DatePickerField
+import com.jrg_upm.tennisrank.ui.components.InforRow
+import com.jrg_upm.tennisrank.ui.components.SelectorOpciones
 import com.jrg_upm.tennisrank.viewModel.ProfileViewModel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 // Imports para calcular la edad
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)  // Necesario ya que hay componentes experimentales en esta función: rememberModalBottomSheetState() y ModalBottomSheet
 @Composable
@@ -104,12 +96,12 @@ fun ProfileScreen(viewModel: ProfileViewModel, onLogout: () -> Unit) {  // Recib
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                ProfileItem("Nacionalidad", viewModel.jugadorActual?.nacionalidad ?: "No definida")
-                ProfileItem("Edad", viewModel.edadJugador)
-                ProfileItem("Mano Dominante", viewModel.jugadorActual?.manoDominante ?: "No definida")
-                ProfileItem("Estilo", viewModel.jugadorActual?.estiloJuego ?: "No definido")
-                ProfileItem("Golpe Maestro", viewModel.jugadorActual?.mejorGolpe ?: "No definido")
-                ProfileItem("Superficie Favorita", viewModel.jugadorActual?.superficieFavorita ?: "No definida")
+                InforRow("Nacionalidad", viewModel.jugadorActual?.nacionalidad ?: "No definida")
+                InforRow("Edad", viewModel.edadJugador)
+                InforRow("Mano Dominante", viewModel.jugadorActual?.manoDominante ?: "No definida")
+                InforRow("Estilo", viewModel.jugadorActual?.estiloJuego ?: "No definido")
+                InforRow("Golpe Maestro", viewModel.jugadorActual?.mejorGolpe ?: "No definido")
+                InforRow("Superficie Favorita", viewModel.jugadorActual?.superficieFavorita ?: "No definida")
             }
         }
 
@@ -207,22 +199,7 @@ fun ProfileHeader(nombre: String?, avatarUrl: String?, onImageClick: () -> Unit)
 }
 
 
-// Función que define los items para mostrar los datos de cada campo
-@Composable
-fun ProfileItem(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, fontWeight = FontWeight.Bold, color = Color.Gray)
-        Text(text = value, fontWeight = FontWeight.Medium)
-    }
-    HorizontalDivider(thickness = 0.5.dp, color = Color.LightGray)
-}
-
-
+// Función que define la pestaña en la que se le permite editar al usuario los campos que desee
 @Composable
 fun EditProfile(
     viewModel: ProfileViewModel,
@@ -323,103 +300,5 @@ fun EditProfile(
     }
 }
 
-// Función para mostrar el calendario y que el usuario pueda editar su fecha de nacimiento
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DatePickerField(fechaSeleccionada: String, onFechaCambiada: (String) -> Unit) {
-    var mostrarCalendario by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
 
-    // Campo de texto que al pulsar abre el calendario
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .clickable { mostrarCalendario = true }) {
-        OutlinedTextField(
-            value = fechaSeleccionada,
-            onValueChange = { },
-            readOnly = true,  // Queremos que solo elija una fecha del calendario, no que escriba
-            label = { Text("Fecha de Nacimiento") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = false,
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                disabledBorderColor = MaterialTheme.colorScheme.outline
-            )
-        )
-        // CALENDARIO PARA ELEGIR LA FECHA
-        if (mostrarCalendario) {
-            DatePickerDialog(  // Calendario a mostrar
-                onDismissRequest = { mostrarCalendario = false }, // Si el usuario toca fuera de la ventana se cierra
-                confirmButton = {  // Botón para confirmar la fecha seleccionada
-                    TextButton(onClick = {  // Text Botton para que el botón sea plano
-                        datePickerState.selectedDateMillis?.let {  // Cogemos la fecha seleccionada
-                            // Formateamos para Supabase (yyyy-MM-dd)
-                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
-                                timeZone = TimeZone.getTimeZone("UTC")
-                            }  // Actualizamos nuestra variable de estado
-                            onFechaCambiada(formatter.format(Date(it)))
-                        }  // Cerramos el botón
-                        mostrarCalendario = false
-                    }) { Text("Aceptar") }
-                },
-                dismissButton = {  // Botón para cancelar
-                    TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") }
-                }
-            ) {
-                DatePicker(state = datePickerState)
-            }
-        }
-    }
-}
-
-
-// Función general para poder desplegar las opciones a elegir de un determinado campo
-@OptIn(ExperimentalMaterial3Api::class)  // Indica que es un compenente nuevo en la librería y pueden haber cambios
-@Composable
-fun SelectorOpciones(
-    label: String,  // Campo que queremos editar
-    seleccionado: String,
-    opciones: List<String>,  // Lista de opciones
-    onOptionSelected: (String) -> Unit  // Callback para devolver la opción elegida
-) {
-    // variable de estado para indicar si hay que expandir las opciones o no
-    var expandido by remember { mutableStateOf(false) }
-
-    // Caja donde estará el menú de selección
-    ExposedDropdownMenuBox(
-        expanded = expandido,
-        onExpandedChange = { expandido = !expandido },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        OutlinedTextField(
-            value = seleccionado,
-            onValueChange = {},
-            readOnly = true,  // Solo queremos que el usuario vea las opciones y que las seleccione, no que pueda escribir
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-        )
-
-        // Menú de selección
-        ExposedDropdownMenu(
-            expanded = expandido,
-            onDismissRequest = { expandido = false }
-        ) {
-            opciones.forEach { opcion ->
-                DropdownMenuItem(
-                    text = { Text(opcion) },
-                    onClick = {
-                        onOptionSelected(opcion) // Avisamos del cambio
-                        expandido = false
-                    }
-                )
-            }
-        }
-    }
-}
 
