@@ -43,7 +43,13 @@ fun LogNavigation(navController: NavHostController) {
         }
          // Ruta del menu que contiene las 4 pestañas
         composable ("menu") {
-            MenuScreen()
+            MenuScreen(
+                onLogout = {  // Función que se pasa para poder cerrar sesión una vez se esté dentro de la app
+                    navController.navigate("login") {
+                        popUpTo("menu") { inclusive = true }
+                    }
+                }
+            )
         }
 
 

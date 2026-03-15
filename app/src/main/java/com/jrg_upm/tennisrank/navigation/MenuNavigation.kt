@@ -21,7 +21,7 @@ import com.jrg_upm.tennisrank.model.getCurrentPlayer
 import com.jrg_upm.tennisrank.ui.theme.TennisRankTheme
 
 @Composable
-fun MenuScreen() {
+fun MenuScreen(onLogout: () -> Unit) {
     //Each screen will be its own composable
     // Theme para estilizar la aplicación
     TennisRankTheme() {
@@ -83,7 +83,7 @@ fun MenuScreen() {
             // Es vital usar paddingValues para que el contenido no se tape con los elementos fijos del Scaffold
             Column(modifier = Modifier.padding(paddingValues)) {
                 // Cambiamos visualmente de pantalla
-                Navigate(navController = navController, jugadorActual = jugadorActual)
+                Navigate(navController = navController, jugadorActual = jugadorActual, onLogout = onLogout)
             }
         }
     }

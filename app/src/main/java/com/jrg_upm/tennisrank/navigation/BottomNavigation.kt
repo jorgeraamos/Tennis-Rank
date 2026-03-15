@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,11 +23,13 @@ import com.jrg_upm.tennisrank.view.HistoricalScreen
 import com.jrg_upm.tennisrank.view.HomeScreen
 import com.jrg_upm.tennisrank.view.ProfileScreen
 import com.jrg_upm.tennisrank.view.StatisticsScreen
+import com.jrg_upm.tennisrank.viewModel.ProfileViewModel
+import com.jrg_upm.tennisrank.viewModel.ProfileViewModelFactory
 
 // Gestor de Pantallas dentro del Menú de la App:
 // navController es el objeto que ejecuta las órdenes de ir de una pantalla a otra
 @Composable
-fun Navigate(navController: NavHostController, jugadorActual: Jugador?) {
+fun Navigate(navController: NavHostController, jugadorActual: Jugador?, onLogout: () -> Unit) {
     NavHost(navController = navController, startDestination = "home"){
         // Para cada ruta definimos la función que se ejecuta
         composable("home", ){
@@ -42,7 +45,11 @@ fun Navigate(navController: NavHostController, jugadorActual: Jugador?) {
         }
 
         composable("profile", ){
-            ProfileScreen(jugadorActual)
+            // Instanciamos el ViewModel:
+            val viewModel: ProfileViewModel = viewModel(
+                factory = ProfileViewModelFactory(jugadorActual)
+            )
+            ProfileScreen(viewModel = viewModel, onLogout = onLogout)
         }
     }
 

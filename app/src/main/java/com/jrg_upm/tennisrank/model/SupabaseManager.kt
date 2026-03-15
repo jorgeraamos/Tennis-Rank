@@ -63,8 +63,18 @@ suspend fun registerUser(emailInput: String, passInput: String, nameInput: Strin
     }
 }
 
-// FUNCIÓN PARA OBTENER EL JUGADOR QUE ESTÁ EJECUTANDO LA APP
+// FUNCIÓN PARA CERRAR SESIÓN
+suspend fun signOutUser(): Boolean {
+    return try {
+        client.auth.signOut()
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
+    }
+}
 
+// FUNCIÓN PARA OBTENER EL JUGADOR QUE ESTÁ EJECUTANDO LA APP
 suspend fun getCurrentPlayer(): Jugador? {
     // Obtenemos el ID del usuario que tiene la sesión abierta
     val user = client.auth.currentUserOrNull() ?: return null

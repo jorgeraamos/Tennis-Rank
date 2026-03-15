@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -44,16 +45,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.jrg_upm.tennisrank.model.Jugador
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.jrg_upm.tennisrank.model.updateAvatarUrl
-import com.jrg_upm.tennisrank.model.updatePlayerData
-import com.jrg_upm.tennisrank.model.uploadProfileImage
+import com.jrg_upm.tennisrank.viewModel.ProfileViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 // Imports para calcular la edad
 import java.text.SimpleDateFormat
@@ -61,78 +60,27 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)  // Necesario ya que hay componentes experimentales en esta función: rememberModalBottomSheetState() y ModalBottomSheet
 @Composable
-fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está ejecutando la app
+fun ProfileScreen(viewModel: ProfileViewModel, onLogout: () -> Unit) {  // Recibimos el usuario que está ejecutando la app
     // Variables para controlar si se ve o no la pestaña para editar el perfil
     val sheetState = rememberModalBottomSheetState()
     var mostrarSheet by remember { mutableStateOf(false) }
 
-
-    // Variables para que el usuario pueda editar dichos campos:
-    var nombreEdit by remember(jugadorActual) { mutableStateOf(jugadorActual?.nombre ?: "") }
-
-    var nacionalidadEdit by remember(jugadorActual) {
-        mutableStateOf(
-            jugadorActual?.nacionalidad ?: ""
-        )
-    }
-    var fechaNacimientoEdit by remember(jugadorActual) {
-        mutableStateOf(jugadorActual?.fechaNacimiento ?: "")
-    }
-
-    var manoDominanteEdit by remember(jugadorActual) {
-        mutableStateOf(
-            jugadorActual?.manoDominante ?: ""
-        )
-    }
-
-    var estiloJuegoEdit by remember(jugadorActual) {
-        mutableStateOf(
-            jugadorActual?.estiloJuego ?: ""
-        )
-    }
-    var mejorGolpeEdit by remember(jugadorActual) {
-        mutableStateOf(
-            jugadorActual?.mejorGolpe ?: ""
-        )
-    }
-
-    // Variable de estado para actualizar la imagen del jugador
-    // Si el jugador ya tiene imagen la cogemos, en caso contrario será null
-    var imagenTemporalUrl by remember(jugadorActual?.avatarUrl) {
-        mutableStateOf(jugadorActual?.avatarUrl)
-    }
-
     // Variables para poder subir la foto de perfil de cada jugador:
 
+    val coroutineScope = rememberCoroutineScope()
     // Permiso del "contexto" que necesita la app para poder leer archivos del sistema:
     val context = LocalContext.current
-
-    // Usamos scope ya que la subida de la imagen a Supabase se hace de manera suspend
-    val coroutineScope = rememberCoroutineScope()
 
     // Configuración del launcher(Objeto que abre la galería para que el usuario escoja la imagen que desee):
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()  // Para indicar que se quiere que el usuario elija una imagen
     ) { uri: Uri? ->  // Uri es la dirección de la imagen
         uri?.let {
+
             // Convertimos la URI en un ByteArray para subirlo
             val inputStream = context.contentResolver.openInputStream(it)
-            val bytes =
-                inputStream?.readBytes()  // Leemos toda la información binaria de la foto y la convertimos en un ByteArray
-            if (bytes != null && jugadorActual != null) {
-                coroutineScope.launch {
-                    // Subimos a Supabase Storage
-                    val url = uploadProfileImage(jugadorActual.id, bytes)
-                    // Actualizamos nuestra variable con la nueva url:
-                    // Le añadimos la fecha ya que si tiene el mismo nombre que la anterior la descartaría.
-                    imagenTemporalUrl = "$url?t=${System.currentTimeMillis()}"
-                    // Actualizamos el campo avatar_url de la tabla jugadores en Supabase
-                    updateAvatarUrl(
-                        jugadorActual.id,
-                        url
-                    )  // se ejecuta en 2º plano, por eso lo ponemos después
-                }
-            }
+            val bytes = inputStream?.readBytes()  // Leemos toda la información binaria de la foto y la convertimos en un ByteArray
+            viewModel.subirFoto(bytes)  // Llamamos a la función subirFoto del Profile View Model
         }
     }
 
@@ -145,7 +93,7 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
     ) {
 
         // Llamamos a la función donde se definen las componentes que muestran la foto de perfil y el nombre del jugador
-        ProfileHeader(nombre = jugadorActual?.nombre, avatarUrl = imagenTemporalUrl, onImageClick = {launcher.launch("image/*")})
+        ProfileHeader(nombre = viewModel.jugadorActual?.nombre, avatarUrl = viewModel.imagenTemporalUrl, onImageClick = {launcher.launch("image/*")})
 
         // Ponemos un espacio entre medias
         Spacer(modifier = Modifier.height(24.dp))
@@ -156,149 +104,65 @@ fun ProfileScreen(jugadorActual: Jugador?) {  // Recibimos el usuario que está 
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                ProfileItem("Nacionalidad", jugadorActual?.nacionalidad ?: "No definida")
-                ProfileItem("Edad", calcularEdad(jugadorActual?.fechaNacimiento) ?: "--")
-                ProfileItem("Mano Dominante", jugadorActual?.manoDominante ?: "No definida")
-                ProfileItem("Estilo", jugadorActual?.estiloJuego ?: "No definido")
-                ProfileItem("Golpe Maestro", jugadorActual?.mejorGolpe ?: "No definido")
-                ProfileItem("Superficie Favorita", jugadorActual?.superficieFavorita ?: "No definida")
+                ProfileItem("Nacionalidad", viewModel.jugadorActual?.nacionalidad ?: "No definida")
+                ProfileItem("Edad", viewModel.edadJugador)
+                ProfileItem("Mano Dominante", viewModel.jugadorActual?.manoDominante ?: "No definida")
+                ProfileItem("Estilo", viewModel.jugadorActual?.estiloJuego ?: "No definido")
+                ProfileItem("Golpe Maestro", viewModel.jugadorActual?.mejorGolpe ?: "No definido")
+                ProfileItem("Superficie Favorita", viewModel.jugadorActual?.superficieFavorita ?: "No definida")
             }
         }
 
         // Añadimos un espacio para poner los botones
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botón para que el usuario abra la pestaña de edición de perfil
-        Button(onClick = { mostrarSheet = true }) {
-            Text("Editar Perfil")
+        // Botones al final de la view para poder editar el perfil o cerrar sesión
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // Añadimos espacio entre los botones
+        ){
+            // Botón para que el usuario abra la pestaña de edición de perfil
+            Button(modifier = Modifier.weight(1f) ,onClick = { mostrarSheet = true }) {
+                Text("Editar Perfil")
+            }
+
+            // Botón que cierra la sesión del usuario:
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = {
+                            viewModel.cerrarSesion { onLogout() }
+                          },
+                colors = ButtonDefaults.buttonColors(  // Ponemos el color rojo al botón (que es el de error)
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                )
+            ){
+                Text("Cerrar Sesión")
+            }
         }
+
 
         // PESTAÑA QUE SE ABRE AL PULSAR EL BOTÓN DE EDITAR PERFIL PARA PODER ELEGIR Y EDITAR LOS CAMPOS QUE EL USUARIO DESEE
         if (mostrarSheet) {
             ModalBottomSheet(
-                onDismissRequest = { mostrarSheet = false },
+                onDismissRequest = { mostrarSheet = false },  // Si se pulsa fuera de la pestaña se cerrará
                 sheetState = sheetState,
                 containerColor = Color(0xFF1C1C1C)
             ) {
-                // Contenido de la pestaña de edición del perfil
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .padding(bottom = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        "Editar Mi Perfil",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Variable nombre
-                    OutlinedTextField(
-                        value = nombreEdit,
-                        onValueChange = { nombreEdit = it },
-                        label = { Text("Nombre") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Variable nacionalidad
-                    OutlinedTextField(
-                        value = nacionalidadEdit,
-                        onValueChange = { nacionalidadEdit = it },
-                        label = { Text("Nacionalidad") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    DatePickerField(
-                        fechaSeleccionada = fechaNacimientoEdit,
-                        onFechaCambiada = {fechaNacimientoEdit = it} )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Editar mano dominante con menu depegable:
-                    SelectorOpciones(
-                        label = "Mano Dominante",
-                        seleccionado = manoDominanteEdit,
-                        opciones = listOf("Derecha", "Izquierda"),
-                        onOptionSelected = { manoDominanteEdit = it } // Actualizamos la variable
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Editar estilo de juego con menu depegable:
-                    SelectorOpciones(
-                        label = "Estilo de Juego",
-                        seleccionado = estiloJuegoEdit,
-                        opciones = listOf(
-                            "Agresivo",
-                            "Defensivo",
-                            "Saque y Volea",
-                            "Contragolpeador"
-                        ),
-                        onOptionSelected = { estiloJuegoEdit = it }
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Editar mejor golpe con menu depegable:
-                    SelectorOpciones(
-                        label = "Golpe Maestro",
-                        seleccionado = mejorGolpeEdit,
-                        opciones = listOf("Drive", "Revés", "Saque", "Volea", "Dejada"),
-                        onOptionSelected = { mejorGolpeEdit = it }
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp) // Añadimos espacio entre los botones
-                    ) {
-                        // Botón de Volver
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                // Cerramos la pestaña de edición
-                                coroutineScope.launch {
-                                    sheetState.hide()
-                                }.invokeOnCompletion {
-                                    // Para comunicar al compose de que no debe mostrar el Sheet
-                                    if (!sheetState.isVisible) mostrarSheet = false
-                                }
-                            }
-                        ) {
-                            Text("Volver")
-                        }
-
-                        // Boton para guardar los datos en Supabase
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                coroutineScope.launch {
-                                    // Funcion para llamar a Supabase para guardar
-                                    // Ponemos las !! porque sabemos que el usuario tiene id
-                                    updatePlayerData(
-                                        idUsuario = jugadorActual!!.id,
-                                        nombre = nombreEdit,
-                                        nacionalidad = nacionalidadEdit,
-                                        fechaNacimiento = fechaNacimientoEdit,
-                                        manoDominante = manoDominanteEdit,
-                                        estilo = estiloJuegoEdit,
-                                        mejorGolpe = mejorGolpeEdit
-                                    )
-                                    // 2. Cerrar la pestaña
-                                    sheetState.hide()
-                                }.invokeOnCompletion {
-                                    if (!sheetState.isVisible) mostrarSheet = false
-                                }
-                            }
-                        ) {
-                            Text("Guardar Cambios")
-                        }
-                    }
-                }
+               // Función donde se encuentran todos los componentes de la pestaña de Edición del perfil
+               EditProfile(
+                   viewModel = viewModel,
+                   onVolver = {
+                       coroutineScope.launch { sheetState.hide() }
+                           .invokeOnCompletion { if (!sheetState.isVisible) mostrarSheet = false }
+                   },
+                   onGuardar = {
+                       coroutineScope.launch {
+                           viewModel.updateDataPlayer()
+                           sheetState.hide()
+                       }.invokeOnCompletion { if (!sheetState.isVisible) mostrarSheet = false }
+                   }
+               )
             }
         }
     }
@@ -343,9 +207,6 @@ fun ProfileHeader(nombre: String?, avatarUrl: String?, onImageClick: () -> Unit)
 }
 
 
-
-
-
 // Función que define los items para mostrar los datos de cada campo
 @Composable
 fun ProfileItem(label: String, value: String) {
@@ -362,6 +223,105 @@ fun ProfileItem(label: String, value: String) {
 }
 
 
+@Composable
+fun EditProfile(
+    viewModel: ProfileViewModel,
+    onVolver: () -> Unit,  // Funcion para volver a la pantalla principal del Profile
+    onGuardar: () -> Unit  // Funcion para guardar los datos editados
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "Editar Mi Perfil",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Variable nombre
+        OutlinedTextField(
+            value = viewModel.nombreEdit,
+            onValueChange = { viewModel.nombreEdit = it },
+            label = { Text("Nombre") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Variable nacionalidad
+        OutlinedTextField(
+            value = viewModel.nacionalidadEdit,
+            onValueChange = { viewModel.nacionalidadEdit = it },
+            label = { Text("Nacionalidad") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        DatePickerField(
+            fechaSeleccionada = viewModel.fechaNacimientoEdit,
+            onFechaCambiada = {viewModel.fechaNacimientoEdit = it} )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Editar mano dominante con menu depegable:
+        SelectorOpciones(
+            label = "Mano Dominante",
+            seleccionado = viewModel.manoDominanteEdit,
+            opciones = listOf("Derecha", "Izquierda"),
+            onOptionSelected = { viewModel.manoDominanteEdit = it } // Actualizamos la variable
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Editar estilo de juego con menu depegable:
+        SelectorOpciones(
+            label = "Estilo de Juego",
+            seleccionado = viewModel.estiloJuegoEdit,
+            opciones = listOf(
+                "Agresivo",
+                "Defensivo",
+                "Saque y Volea",
+                "Contragolpeador"
+            ),
+            onOptionSelected = { viewModel.estiloJuegoEdit = it }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Editar mejor golpe con menu depegable:
+        SelectorOpciones(
+            label = "Golpe Maestro",
+            seleccionado = viewModel.mejorGolpeEdit,
+            opciones = listOf("Drive", "Revés", "Saque", "Volea", "Dejada"),
+            onOptionSelected = { viewModel.mejorGolpeEdit = it }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp) // Añadimos espacio entre los botones
+        ) {
+            // Botón de Volver
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = onVolver
+            ) {
+                Text("Volver")
+            }
+
+            // Boton para guardar los datos en Supabase
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = onGuardar
+            ) {
+                Text("Guardar Cambios")
+            }
+        }
+    }
+}
 
 // Función para mostrar el calendario y que el usuario pueda editar su fecha de nacimiento
 @OptIn(ExperimentalMaterial3Api::class)
@@ -371,7 +331,9 @@ fun DatePickerField(fechaSeleccionada: String, onFechaCambiada: (String) -> Unit
     val datePickerState = rememberDatePickerState()
 
     // Campo de texto que al pulsar abre el calendario
-    Box(modifier = Modifier.fillMaxWidth().clickable { mostrarCalendario = true }) {
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .clickable { mostrarCalendario = true }) {
         OutlinedTextField(
             value = fechaSeleccionada,
             onValueChange = { },
@@ -407,36 +369,6 @@ fun DatePickerField(fechaSeleccionada: String, onFechaCambiada: (String) -> Unit
                 DatePicker(state = datePickerState)
             }
         }
-    }
-}
-
-
-
-// FUNCION PARA CALCULAR LA EDAD DE CADA JUGADOR SEGÚN SU FECHA DE NACIMIENTO
-fun calcularEdad(fechaNacimiento: String?): String? {
-    if (fechaNacimiento == null) return null
-    return try {
-        // Suponiendo que la fecha en Supabase es "yyyy-MM-dd"
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val fechaNac = sdf.parse(fechaNacimiento) ?: return null
-
-        val hoy = Calendar.getInstance()
-        val nacimiento = Calendar.getInstance()
-        nacimiento.time = fechaNac
-
-        var edad = hoy.get(Calendar.YEAR) - nacimiento.get(Calendar.YEAR)
-
-        // Ajuste por si aún no ha cumplido años este año
-        if (hoy.get(Calendar.MONTH) < nacimiento.get(Calendar.MONTH)) {
-            edad--
-        } else if (hoy.get(Calendar.MONTH) == nacimiento.get(Calendar.MONTH)) {
-            if (hoy.get(Calendar.DAY_OF_MONTH) < nacimiento.get(Calendar.DAY_OF_MONTH)) {
-                edad--
-            }
-        }
-        "$edad años"
-    } catch (e: Exception) {
-        null
     }
 }
 
