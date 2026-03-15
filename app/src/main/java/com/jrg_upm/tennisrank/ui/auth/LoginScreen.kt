@@ -105,7 +105,8 @@ fun LoginScreen(onLoginSuccess: () -> Unit, onNavigateToRegister: () -> Unit) {
                     onClick = {
                         scope.launch {
                             // Función que verifica el inicio de sesión:
-                            val success = loginUser(user_email, password)
+                            // Usamos .trim() para eliminar cualquier espacio accidental
+                            val success = loginUser(user_email.trim(), password.trim())
                             if( success ) {  // Si la verificación ha sido correcta ejecutamos la función de success
                                 onLoginSuccess()
                             }

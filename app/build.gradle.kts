@@ -4,6 +4,7 @@ import java.io.FileInputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -47,8 +48,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         buildConfig = true
@@ -77,12 +78,34 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
-    // Dependencias para supabase:
-    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.0.0") // Para la base de datos
-    implementation("io.github.jan-tennert.supabase:auth-kt:3.0.0")      // Para el Login
-    // Para el módulo de Storage:
-    implementation("io.github.jan-tennert.supabase:storage-kt:3.0.3")
-    // Para que se puedan mostrar imágenes de internet, ya que las fotos de perfil se almacenarán en supabase
+//    // Dependencias para supabase:
+//    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
+//    implementation("io.github.jan-tennert.supabase:postgrest-kt") // Para la base de datos
+//    implementation("io.github.jan-tennert.supabase:auth-kt")      // Para el Login
+//    // Para el módulo de Storage:
+//    implementation("io.github.jan-tennert.supabase:storage-kt")
+//    // Para que se puedan mostrar imágenes de internet, ya que las fotos de perfil se almacenarán en supabase
+//    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // MOTOR Y PLUGINS DE KTOR (Necesarios para Supabase)
+//    val ktor_version = "2.3.12" // Asegúrate de que la versión sea consistente
+//    implementation("io.ktor:ktor-client-android:$ktor_version")
+//    implementation("io.ktor:ktor-client-core:$ktor_version")
+//    implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+//    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version")
+
+    // Este es el que te está pidiendo específicamente el error:
+//    implementation("io.ktor:ktor-client-plugins:$ktor_version")
+
+
+    // Supabase dependencies
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.4.1"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.github.jan-tennert.supabase:storage-kt")
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.ktor:ktor-client-android:3.4.1")
+    // implementation("io.ktor:ktor-client-plugins:3.4.1")
+
 }

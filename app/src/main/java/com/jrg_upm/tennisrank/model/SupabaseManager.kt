@@ -1,5 +1,6 @@
 package com.jrg_upm.tennisrank.model
 
+import android.util.Log
 import com.jrg_upm.tennisrank.model.SupabaseClient.client
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
@@ -40,7 +41,7 @@ suspend fun loginUser(email: String, pass: String): Boolean {
         }
         true
     } catch (e: Exception) {
-        e.printStackTrace() // Imprimimos el error
+        Log.e("LOGIN_DEBUG", "Error detallado: ${e.message}") // Imprimimos el error
         false
     }
 }
@@ -100,7 +101,7 @@ suspend fun getAllPlayers(): List<Jugador> {
     return try {
         // Cogemos a todos los jugadores ordenados por sus puntos
         client.postgrest["jugadores"].select {
-            order("puntos", order = Order.DESCENDING)
+            order("puntos_actuales", order = Order.DESCENDING)
         }.decodeList<Jugador>()
     } catch (e: Exception) {
         e.printStackTrace()
@@ -157,7 +158,7 @@ suspend fun updatePlayerData(
     try{  // Datos de la tabla jugadores
         client.postgrest["jugadores"].update(
             {  // Campos a actualizar
-                set("nombre", nombre)
+                set("nombre_completo", nombre)
                 set("nacionalidad", nacionalidad)
                 set("fecha_nacimiento", fechaNacimiento)
                 set("mano_dominante", manoDominante)

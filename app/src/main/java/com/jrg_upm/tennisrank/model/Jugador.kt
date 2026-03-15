@@ -7,15 +7,17 @@ import kotlinx.serialization.Serializable
 data class Jugador(
     // Ponemos SerialName para indicar el nombre de las columnas que hay en supabase
     @SerialName("id") val id: String,
-    @SerialName("nombre") val nombre: String,
-    @SerialName("puntos") val puntos: Int = 0,
+    @SerialName("nombre_completo") val nombre: String,
+    @SerialName("email") val email: String,
+    @SerialName("puntos_actuales") val puntos: Int = 0,
     @SerialName("posicion_ranking") val posicionRanking: Int = 0,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("nacionalidad") val nacionalidad: String? = null,
     @SerialName("fecha_nacimiento") val fechaNacimiento: String? = null,
     @SerialName("mano_dominante") val manoDominante: String? = null,
     @SerialName("estilo_juego") val estiloJuego: String? = null,
     @SerialName("mejor_golpe") val mejorGolpe: String? = null,
-    @SerialName("superficie_favorita") val superficieFavorita: String? = null,
-    @SerialName("avatar_url") val avatarUrl: String? = null
+    @SerialName("superficie_favorita") val superficieFavorita: String? = null
+
 
 )

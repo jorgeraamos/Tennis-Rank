@@ -58,7 +58,7 @@ fun HomeScreen(jugadorActual: Jugador?) {
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 20.dp),  // especificamos la altura
-                color = Color.Yellow
+                color = Color.Cyan
             )
         }
 
@@ -107,12 +107,12 @@ fun HomeScreen(jugadorActual: Jugador?) {
                 Text(
                     text = "${jugador.posicionRanking}. ${jugador.nombre}",
                     fontWeight = if(esUsuarioActual) FontWeight.ExtraBold else FontWeight.Normal,
-                    color = if (esUsuarioActual) Color.Yellow else Color.White
+                    color = if (esUsuarioActual) Color.Magenta else Color.DarkGray
                 )
                 Text(
                     text = "${jugador.puntos} pts",
                     fontWeight = if (esUsuarioActual) FontWeight.ExtraBold else FontWeight.Normal,
-                    color = if (esUsuarioActual) Color.Yellow else Color.LightGray
+                    color = if (esUsuarioActual) Color.Magenta.copy(alpha = 0.5f) else Color.DarkGray.copy(alpha = 0.5f)
                 )
             }
             // Solo ponemos el divisor si NO es el usuario actual (para que el resaltado se vea limpio)
