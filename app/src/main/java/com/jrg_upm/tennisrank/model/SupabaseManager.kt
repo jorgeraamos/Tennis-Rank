@@ -83,7 +83,7 @@ suspend fun getCurrentPlayer(): Jugador? {
 
     // Buscamos en la tabla 'jugadores' la fila que coincida con ese ID
     return try {
-        client.postgrest["jugadores"]
+        client.postgrest["jugador"]
             .select {
                 filter {
                     eq("id", userId)
@@ -100,7 +100,7 @@ suspend fun getCurrentPlayer(): Jugador? {
 suspend fun getAllPlayers(): List<Jugador> {
     return try {
         // Cogemos a todos los jugadores ordenados por sus puntos
-        client.postgrest["jugadores"].select {
+        client.postgrest["jugador"].select {
             order("puntos_actuales", order = Order.DESCENDING)
         }.decodeList<Jugador>()
     } catch (e: Exception) {
@@ -129,7 +129,7 @@ suspend fun uploadProfileImage(userId: String, imageBytes: ByteArray): String {
 suspend fun updateAvatarUrl(idUsuario: String, nuevaUrl: String) {
     try {
         // Seleccionamos de la tabla jugadores y actualizamos el campo avatar_url por la nueva url
-        client.postgrest["jugadores"].update(
+        client.postgrest["jugador"].update(
             {
                 // El nombre entre comillas debe ser EXACTO al de tu tabla en Supabase
                 set("avatar_url", nuevaUrl)
@@ -156,7 +156,7 @@ suspend fun updatePlayerData(
     mejorGolpe: String
 ){
     try{  // Datos de la tabla jugadores
-        client.postgrest["jugadores"].update(
+        client.postgrest["jugador"].update(
             {  // Campos a actualizar
                 set("nombre_completo", nombre)
                 set("nacionalidad", nacionalidad)
