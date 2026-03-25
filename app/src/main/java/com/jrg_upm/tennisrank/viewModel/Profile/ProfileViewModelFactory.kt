@@ -1,9 +1,8 @@
-package com.jrg_upm.tennisrank.viewModel
+package com.jrg_upm.tennisrank.viewModel.Profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.jrg_upm.tennisrank.model.Jugador
-
 
 // Clase "Fábrica" para el ProfileViewModel
 // Se necesita ya que el ViewModel requiere un parámetro (jugador) y Android,

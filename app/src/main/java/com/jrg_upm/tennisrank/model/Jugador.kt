@@ -12,7 +12,7 @@ data class Jugador(
     @SerialName("puntos_actuales") val puntos: Int = 0,
     @SerialName("posicion_ranking") val posicionRanking: Int = 0,
     @SerialName("avatar_url") val avatarUrl: String? = null,
-    @SerialName("nacionalidad") val nacionalidad: String? = null,
+    @SerialName("pais") val pais: String? = null,
     @SerialName("fecha_nacimiento") val fechaNacimiento: String? = null,
     @SerialName("mano_dominante") val manoDominante: String? = null,
     @SerialName("estilo_juego") val estiloJuego: String? = null,

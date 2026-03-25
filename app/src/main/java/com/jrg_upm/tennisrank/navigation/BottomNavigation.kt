@@ -23,13 +23,18 @@ import com.jrg_upm.tennisrank.ui.historical.HistoricalScreen
 import com.jrg_upm.tennisrank.ui.home.HomeScreen
 import com.jrg_upm.tennisrank.ui.profile.ProfileScreen
 import com.jrg_upm.tennisrank.ui.statistics.StatisticsScreen
-import com.jrg_upm.tennisrank.viewModel.ProfileViewModel
-import com.jrg_upm.tennisrank.viewModel.ProfileViewModelFactory
+import com.jrg_upm.tennisrank.viewModel.Profile.ProfileViewModel
+import com.jrg_upm.tennisrank.viewModel.Profile.ProfileViewModelFactory
 
 // Gestor de Pantallas dentro del Menú de la App:
 // navController es el objeto que ejecuta las órdenes de ir de una pantalla a otra
 @Composable
-fun Navigate(navController: NavHostController, jugadorActual: Jugador?, onLogout: () -> Unit) {
+fun Navigate(
+    navController: NavHostController,
+    jugadorActual: Jugador?,
+    onLogout: () -> Unit,
+    onProfileUpdated: () -> Unit  // Función para actualizar al jugador actual en caso de cambios
+) {
     NavHost(navController = navController, startDestination = "home"){
         // Para cada ruta definimos la función que se ejecuta
         composable("home", ){
@@ -49,7 +54,7 @@ fun Navigate(navController: NavHostController, jugadorActual: Jugador?, onLogout
             val viewModel: ProfileViewModel = viewModel(
                 factory = ProfileViewModelFactory(jugadorActual)
             )
-            ProfileScreen(viewModel = viewModel, onLogout = onLogout)
+            ProfileScreen(viewModel = viewModel, onLogout = onLogout, onSaveSuccess = onProfileUpdated)
         }
     }
 

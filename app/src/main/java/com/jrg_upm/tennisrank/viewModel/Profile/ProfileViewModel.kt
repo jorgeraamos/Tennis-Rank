@@ -1,12 +1,13 @@
-package com.jrg_upm.tennisrank.viewModel
+package com.jrg_upm.tennisrank.viewModel.Profile
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrg_upm.tennisrank.model.Jugador
+import com.jrg_upm.tennisrank.model.getCurrentPlayer
 import com.jrg_upm.tennisrank.model.signOutUser
 import com.jrg_upm.tennisrank.model.updateAvatarUrl
 import com.jrg_upm.tennisrank.model.updatePlayerData
@@ -17,10 +18,11 @@ import java.util.Calendar
 import java.util.Locale
 
 class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
-    // Variables para que el usuario pueda editar dichos campos:
-    var nombreEdit by  mutableStateOf(jugadorActual?.nombre ?: "")
 
-    var nacionalidadEdit by mutableStateOf(jugadorActual?.nacionalidad ?: "")
+    // Variables para que el usuario pueda editar dichos campos:
+    var nombreEdit by mutableStateOf(jugadorActual?.nombre ?: "")
+
+    var paisEdit by mutableStateOf(jugadorActual?.pais ?: "")
     var fechaNacimientoEdit by mutableStateOf(jugadorActual?.fechaNacimiento ?: "")
 
     val edadJugador: String
@@ -32,6 +34,8 @@ class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
     var estiloJuegoEdit by mutableStateOf(jugadorActual?.estiloJuego ?: "")
 
     var mejorGolpeEdit by mutableStateOf(jugadorActual?.mejorGolpe ?: "")
+
+    var superficieFavoritaEdit by mutableStateOf(jugadorActual?.superficieFavorita ?: "")
 
 
     // Variable de estado para actualizar la imagen del jugador
@@ -58,16 +62,21 @@ class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
     // Necesario que sea suspend para luego poder, una vez se han guardado los datos, cerrar la pestaña de edición
     suspend fun updateDataPlayer() {
         if (jugadorActual != null) {
-            updatePlayerData(
-                idUsuario = jugadorActual.id,
-                nombre = nombreEdit,
-                nacionalidad = nacionalidadEdit,
-                fechaNacimiento = fechaNacimientoEdit,
-                manoDominante = manoDominanteEdit,
-                estilo = estiloJuegoEdit,
-                mejorGolpe = mejorGolpeEdit
-            )
+            try {
+                updatePlayerData(
+                    idUsuario = jugadorActual.id,
+                    pais = paisEdit,
+                    fechaNacimiento = fechaNacimientoEdit,
+                    manoDominante = manoDominanteEdit,
+                    estilo = estiloJuegoEdit,
+                    mejorGolpe = mejorGolpeEdit,
+                    superficieFavorita = superficieFavoritaEdit
+                )
+            } catch (e: Exception) {
+                Log.e("UPDATE_DEBUG", "Error: ${e.message}")
+            }
         }
+
     }
 
     // FUNCION PARA CALCULAR LA EDAD DE CADA JUGADOR SEGÚN SU FECHA DE NACIMIENTO

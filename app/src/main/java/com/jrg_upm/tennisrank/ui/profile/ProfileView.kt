@@ -46,13 +46,17 @@ import coil.compose.AsyncImage
 import com.jrg_upm.tennisrank.ui.components.DatePickerField
 import com.jrg_upm.tennisrank.ui.components.InforRow
 import com.jrg_upm.tennisrank.ui.components.SelectorOpciones
-import com.jrg_upm.tennisrank.viewModel.ProfileViewModel
+import com.jrg_upm.tennisrank.viewModel.Profile.ProfileViewModel
 import kotlinx.coroutines.launch
 // Imports para calcular la edad
 
 @OptIn(ExperimentalMaterial3Api::class)  // Necesario ya que hay componentes experimentales en esta función: rememberModalBottomSheetState() y ModalBottomSheet
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel, onLogout: () -> Unit) {  // Recibimos el usuario que está ejecutando la app
+fun ProfileScreen(
+    viewModel: ProfileViewModel,
+    onLogout: () -> Unit,
+    onSaveSuccess: () -> Unit
+) {  // Recibimos el usuario que está ejecutando la app
     // Variables para controlar si se ve o no la pestaña para editar el perfil
     val sheetState = rememberModalBottomSheetState()
     var mostrarSheet by remember { mutableStateOf(false) }
@@ -96,10 +100,10 @@ fun ProfileScreen(viewModel: ProfileViewModel, onLogout: () -> Unit) {  // Recib
             elevation = CardDefaults.cardElevation(4.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                InforRow("Nacionalidad", viewModel.jugadorActual?.nacionalidad ?: "No definida")
+                InforRow("Pais", viewModel.jugadorActual?.pais ?: "No definido")
                 InforRow("Edad", viewModel.edadJugador)
                 InforRow("Mano Dominante", viewModel.jugadorActual?.manoDominante ?: "No definida")
-                InforRow("Estilo", viewModel.jugadorActual?.estiloJuego ?: "No definido")
+                InforRow("Estilo de Juego", viewModel.jugadorActual?.estiloJuego ?: "No definido")
                 InforRow("Golpe Maestro", viewModel.jugadorActual?.mejorGolpe ?: "No definido")
                 InforRow("Superficie Favorita", viewModel.jugadorActual?.superficieFavorita ?: "No definida")
             }
@@ -139,7 +143,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, onLogout: () -> Unit) {  // Recib
             ModalBottomSheet(
                 onDismissRequest = { mostrarSheet = false },  // Si se pulsa fuera de la pestaña se cerrará
                 sheetState = sheetState,
-                containerColor = Color(0xFF1C1C1C)
+                containerColor = Color.White
             ) {
                // Función donde se encuentran todos los componentes de la pestaña de Edición del perfil
                EditProfile(
@@ -151,6 +155,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, onLogout: () -> Unit) {  // Recib
                    onGuardar = {
                        coroutineScope.launch {
                            viewModel.updateDataPlayer()
+                           onSaveSuccess() // Avisamos de que se han guardado los datos para actualizar al jugador
                            sheetState.hide()
                        }.invokeOnCompletion { if (!sheetState.isVisible) mostrarSheet = false }
                    }
@@ -219,18 +224,18 @@ fun EditProfile(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Variable nombre
-        OutlinedTextField(
-            value = viewModel.nombreEdit,
-            onValueChange = { viewModel.nombreEdit = it },
-            label = { Text("Nombre") },
-            modifier = Modifier.fillMaxWidth()
-        )
+//        OutlinedTextField(
+//            value = viewModel.nombreEdit,
+//            onValueChange = { viewModel.nombreEdit = it },
+//            label = { Text("Nombre") },
+//            modifier = Modifier.fillMaxWidth()
+//        )
 
-        // Variable nacionalidad
+        // Variable pais
         OutlinedTextField(
-            value = viewModel.nacionalidadEdit,
-            onValueChange = { viewModel.nacionalidadEdit = it },
-            label = { Text("Nacionalidad") },
+            value = viewModel.paisEdit,
+            onValueChange = { viewModel.paisEdit = it },
+            label = { Text("Pais") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -248,6 +253,16 @@ fun EditProfile(
             seleccionado = viewModel.manoDominanteEdit,
             opciones = listOf("Derecha", "Izquierda"),
             onOptionSelected = { viewModel.manoDominanteEdit = it } // Actualizamos la variable
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Editar superficie favorita con menu depegable:
+        SelectorOpciones(
+            label = "Superficie Favorita",
+            seleccionado = viewModel.superficieFavoritaEdit,
+            opciones = listOf("Rápida", "Tierra Batida", "Hierba"),
+            onOptionSelected = { viewModel.superficieFavoritaEdit = it }
         )
 
         Spacer(modifier = Modifier.height(12.dp))

@@ -19,23 +19,23 @@ import androidx.navigation.compose.rememberNavController
 import com.jrg_upm.tennisrank.model.Jugador
 import com.jrg_upm.tennisrank.model.getCurrentPlayer
 import com.jrg_upm.tennisrank.ui.theme.TennisRankTheme
+import com.jrg_upm.tennisrank.viewModel.Menu.MenuViewModel
+import kotlinx.coroutines.coroutineScope
 
 @Composable
-fun MenuScreen(onLogout: () -> Unit) {
+fun MenuScreen(viewModel: MenuViewModel, onLogout: () -> Unit) {
     //Each screen will be its own composable
     // Theme para estilizar la aplicación
     TennisRankTheme() {
         // Objeto que controla la navegación, debe ser el mismo para la barra de botones como para el NavHost que cambia las pantallas
         val navController = rememberNavController()
-        // Variable para obtener el usuario actual que está utilizando la app
-        var jugadorActual by remember { mutableStateOf<Jugador?>(null) }
 
         // Conectamos con supabase para obtener el jugadorActual
         // Launched Effect indica que se ejecute solo cuando se redibuje la pantalla, para no tener que
         // llamar infinitas veces al getCurrentPlayer y no colapsar la base de datos a llamadas
         LaunchedEffect(Unit) {
             // Cargamos el jugador actual
-            jugadorActual = getCurrentPlayer()
+            viewModel.cargarJugador()
         }
 
         // Scaffold es el componente que organiza los espacios de la pantalla automáticamente, es el esqueleto de la pantalla
@@ -83,9 +83,15 @@ fun MenuScreen(onLogout: () -> Unit) {
             // Es vital usar paddingValues para que el contenido no se tape con los elementos fijos del Scaffold
             Column(modifier = Modifier.padding(paddingValues)) {
                 // Cambiamos visualmente de pantalla
-                Navigate(navController = navController, jugadorActual = jugadorActual, onLogout = onLogout)
+                Navigate(
+                    navController = navController,
+                    jugadorActual = viewModel.jugadorActual,
+                    onLogout = onLogout, // Para poder cerrar sesión
+                    onProfileUpdated = {viewModel.cargarJugador()} // Función para poder actualizar al jugador actual
+                )
             }
         }
     }
 
 }
+

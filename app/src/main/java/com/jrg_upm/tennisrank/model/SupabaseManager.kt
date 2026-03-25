@@ -148,27 +148,30 @@ suspend fun updateAvatarUrl(idUsuario: String, nuevaUrl: String) {
 //FUNCION PARA ACTUALIZAR LA INFORMACIÓN DE CADA JUGADOR
 suspend fun updatePlayerData(
     idUsuario: String,
-    nombre: String,
-    nacionalidad: String,
+    pais: String,
     fechaNacimiento: String,
     manoDominante: String,
     estilo: String,
-    mejorGolpe: String
+    mejorGolpe: String,
+    superficieFavorita: String
 ){
     try{  // Datos de la tabla jugadores
         client.postgrest["jugador"].update(
             {  // Campos a actualizar
-                set("nombre_completo", nombre)
-                set("nacionalidad", nacionalidad)
-                set("fecha_nacimiento", fechaNacimiento)
+                set("pais", pais)
+                // Enviamos la fecha solo si no está en blanco, ya que si daría error al enviar "" a Supabase
+                if(fechaNacimiento.isNotBlank()) set("fecha_nacimiento", fechaNacimiento)
                 set("mano_dominante", manoDominante)
                 set("estilo_juego", estilo)
                 set("mejor_golpe", mejorGolpe)
+                set("superficie_favorita", superficieFavorita)
             }
         ){
             filter{eq("id", idUsuario)}
         }
+        Log.d("SUPABASE", "Datos actualizados correctamente en el servidor")
     } catch( e: Exception){
+        Log.e("SUPABASE_ERROR", "Error al actualizar: ${e.message}")
         e.printStackTrace()
     }
 }
