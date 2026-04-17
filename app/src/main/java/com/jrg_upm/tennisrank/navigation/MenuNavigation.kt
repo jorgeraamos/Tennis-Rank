@@ -10,17 +10,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.jrg_upm.tennisrank.model.Jugador
-import com.jrg_upm.tennisrank.model.getCurrentPlayer
 import com.jrg_upm.tennisrank.ui.theme.TennisRankTheme
 import com.jrg_upm.tennisrank.viewModel.Menu.MenuViewModel
-import kotlinx.coroutines.coroutineScope
 
 @Composable
 fun MenuScreen(viewModel: MenuViewModel, onLogout: () -> Unit) {

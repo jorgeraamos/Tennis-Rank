@@ -1,7 +1,7 @@
-package com.jrg_upm.tennisrank.model
+package com.jrg_upm.tennisrank.supabase
 
 import android.util.Log
-import com.jrg_upm.tennisrank.model.SupabaseClient.client
+import com.jrg_upm.tennisrank.supabase.SupabaseClient.client
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -11,9 +11,18 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_URL
 import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_KEY
+import com.jrg_upm.tennisrank.model.Jugador
+import com.jrg_upm.tennisrank.model.Participante
+import com.jrg_upm.tennisrank.model.Partido
+import com.jrg_upm.tennisrank.model.Set
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
+import java.util.Collections
 
 
 // Conexión con Supabase
@@ -24,7 +33,7 @@ object SupabaseClient {
     ) {
         install(Auth)
         install(Postgrest)
-        install(io.github.jan.supabase.storage.Storage)
+        install(Storage)
     }
 }
 
@@ -175,3 +184,121 @@ suspend fun updatePlayerData(
         e.printStackTrace()
     }
 }
+
+
+// Funcion para obtener el partido que le toca jugar al usuario
+suspend fun getUltimoPartidoConSets(idJugador: String): Pair<Partido, List<Set>>? {
+    return try {
+        // Consultamos el partido filtrando por jugador 1 o jugador 2
+        val response = client.postgrest["partido"].select {
+            filter {
+                or {
+                    eq("id_jugador1", idJugador);
+                    eq("id_jugador2", idJugador)
+                }
+            }
+            // Ordenamos por id de jornada para tener el último
+            order(column = "id_jornada", order = Order.DESCENDING)
+            limit(1)
+        }
+
+        val partido = response.decodeSingleOrNull<Partido>() ?: return null
+
+
+        // Extraemos los sets de cada partido:
+        val setsResponse = client.postgrest["set"].select {
+            filter {eq( "id_partido",partido.id) }
+        }
+        val listaSets = setsResponse.decodeList<Set>().sortedBy { it.numeroSet }
+
+        // Devolvemos el partido y la lista de los sets de dicho partido
+        Pair(partido, listaSets)
+
+    } catch (e: Exception) {
+        null
+    }
+}
+
+
+// Función para obtener a todos los participantes de la edición en la que participa el usuario:
+// Recordemos que un usuario solo puede estar activo en una única edición
+suspend fun getAllParticipantes(idJugador: String): List<Participante> {
+    val idEdicion = try {
+        // Traemos todas las ediciones donde participa el usuario
+        val responseParticipa = client.postgrest["participa"].select(Columns.list("id_edicion")) {
+            filter { eq("id_jugador", idJugador) }
+        }
+        val ediciones = responseParticipa.decodeList<Map<String, Int>>().map { it["id_edicion"] }
+
+        if (ediciones.isEmpty()) return emptyList()
+
+        // Buscamos de sus ediciones la que está activa a través de la tabla edicion
+        // Recordar que un jugador solo puede estar en una edicion activa.
+        val responseEdicion = client.postgrest["edicion"].select(Columns.list("id")) {
+            filter {
+                isIn("id", ediciones as List<Any>)
+                eq("estado", "activo")
+            }
+            limit(1)
+        }
+
+        val edicionActiva = responseEdicion.decodeList<Map<String, Int>>()
+        if (edicionActiva.isNotEmpty()) {
+            edicionActiva[0]["id"] ?: return emptyList()
+        } else {
+            return emptyList()
+        }
+    } catch (e: Exception) {
+        println("Error en la búsqueda de edición: ${e.message}")
+        return emptyList()
+    }
+
+    println("Se ha encontrado la edición del jugador: $idEdicion")
+
+    // Traemos a todos los participantes de esa edición con sus datos de jugador
+    return try {
+        val response = client.postgrest["participa"]
+            .select(Columns.raw(
+                "id_edicion, id_jugador, puntos, partidos_jugados, historial_rivales, jugador(id, nombre_completo)")) {
+                filter {
+                    eq("id_edicion", idEdicion)
+                }
+                order("puntos", order = Order.DESCENDING)
+            }
+        response.decodeList<Participante>()
+    } catch (e: Exception) {
+        println("Error cargando participantes de la edición $idEdicion: ${e.message}")
+        emptyList()
+    }
+}
+
+
+// Funcion para guardar el resultado de un partido
+suspend fun updateResult(
+    idPartido: String,
+    juegosJ1: List<Int>,
+    juegosJ2: List<Int>
+): Boolean{
+    return try {
+        for (i in 0 until 3) {
+            client.postgrest["set"].update(
+                {  // Actualizamos los juegos de cada jugador para cada set
+                    set("juegos_jugador1", juegosJ1[i])
+                    set("juegos_jugador2", juegosJ2[i])
+                }
+            ) {
+                filter {
+                    eq("id_partido", idPartido)
+                    eq("numero_set", i + 1)
+                }
+            }
+        }
+        Log.d("SUPABASE", "Todos los sets actualizados")
+        true // Si termina el bucle sin fallos, devolvemos true
+    } catch (e: Exception) {
+        Log.e("SUPABASE_ERROR", "Error: ${e.message}")
+        false // Si algo falla, devolvemos false
+    }
+}
+
+

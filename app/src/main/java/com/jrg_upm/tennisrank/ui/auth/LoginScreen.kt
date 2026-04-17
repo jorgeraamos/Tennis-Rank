@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jrg_upm.tennisrank.model.loginUser
+import com.jrg_upm.tennisrank.supabase.loginUser
 import kotlinx.coroutines.launch
 
 // Función en la que se define la screen del inicio de sesión:

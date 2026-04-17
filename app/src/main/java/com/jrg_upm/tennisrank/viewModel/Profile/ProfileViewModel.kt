@@ -7,18 +7,19 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrg_upm.tennisrank.model.Jugador
-import com.jrg_upm.tennisrank.model.getCurrentPlayer
-import com.jrg_upm.tennisrank.model.signOutUser
-import com.jrg_upm.tennisrank.model.updateAvatarUrl
-import com.jrg_upm.tennisrank.model.updatePlayerData
-import com.jrg_upm.tennisrank.model.uploadProfileImage
+import com.jrg_upm.tennisrank.supabase.getCurrentPlayer
+import com.jrg_upm.tennisrank.supabase.signOutUser
+import com.jrg_upm.tennisrank.supabase.updateAvatarUrl
+import com.jrg_upm.tennisrank.supabase.updatePlayerData
+import com.jrg_upm.tennisrank.supabase.uploadProfileImage
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
+class ProfileViewModel(val jugadorInicial: Jugador?) : ViewModel() {
 
+    var jugadorActual by mutableStateOf(jugadorInicial)
     // Variables para que el usuario pueda editar dichos campos:
     var nombreEdit by mutableStateOf(jugadorActual?.nombre ?: "")
 
@@ -48,11 +49,11 @@ class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
         if (bytes != null && jugadorActual != null) {
             viewModelScope.launch {  // Con launch se abre otro hilo
                 // Subimos la imagen a Supabase Storage
-                val url = uploadProfileImage(jugadorActual.id, bytes)
+                val url = uploadProfileImage(jugadorActual!!.id, bytes)
                 imagenTemporalUrl = "$url?t=${System.currentTimeMillis()}"
                 // Actualizamos el campo avatar_url de la tabla jugadores en Supabase
                 // se ejecuta en 2º plano, por eso lo ponemos después
-                updateAvatarUrl(jugadorActual.id, url)
+                updateAvatarUrl(jugadorActual!!.id, url)
             }
         }
     }
@@ -64,7 +65,7 @@ class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
         if (jugadorActual != null) {
             try {
                 updatePlayerData(
-                    idUsuario = jugadorActual.id,
+                    idUsuario = jugadorActual!!.id,
                     pais = paisEdit,
                     fechaNacimiento = fechaNacimientoEdit,
                     manoDominante = manoDominanteEdit,
@@ -72,6 +73,11 @@ class ProfileViewModel(val jugadorActual: Jugador?) : ViewModel() {
                     mejorGolpe = mejorGolpeEdit,
                     superficieFavorita = superficieFavoritaEdit
                 )
+                // Actualizamos los campos de la pantalla de perfil inmediatamente
+                val nuevoJugador = getCurrentPlayer()
+                if (nuevoJugador != null) {
+                    jugadorActual = nuevoJugador
+                }
             } catch (e: Exception) {
                 Log.e("UPDATE_DEBUG", "Error: ${e.message}")
             }
