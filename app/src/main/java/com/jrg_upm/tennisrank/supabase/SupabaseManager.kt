@@ -185,37 +185,40 @@ suspend fun updatePlayerData(
     }
 }
 
+// Función para obtener todos los partidos del usuario:
 
-// Funcion para obtener el partido que le toca jugar al usuario
-suspend fun getUltimoPartidoConSets(idJugador: String): Pair<Partido, List<Set>>? {
+suspend fun getAllPartidosConSets(idJugador: String, estado: String): List<Pair<Partido, List<Set>>> {
     return try {
-        // Consultamos el partido filtrando por jugador 1 o jugador 2
+        // Obtenemos todos los partidos que coincidan con el filtro de estado, para así
+        // poder separar ver los partidos ya jugados a los que ya se han jugado
         val response = client.postgrest["partido"].select {
             filter {
-                or {
-                    eq("id_jugador1", idJugador);
-                    eq("id_jugador2", idJugador)
+                and {
+                    eq("estado", estado)
+                    or {
+                        eq("id_jugador1", idJugador)
+                        eq("id_jugador2", idJugador)
+                    }
                 }
             }
-            // Ordenamos por id de jornada para tener el último
             order(column = "id_jornada", order = Order.DESCENDING)
-            limit(1)
         }
 
-        val partido = response.decodeSingleOrNull<Partido>() ?: return null
+        val partidos = response.decodeList<Partido>()
 
+        // Mapeamos cada partido a su par con sets
+        partidos.map { partido ->
+            val setsResponse = client.postgrest["set"].select {
+                filter { eq("id_partido", partido.id) }
+            }
+            val listaSets = setsResponse.decodeList<Set>().sortedBy { it.numeroSet }
 
-        // Extraemos los sets de cada partido:
-        val setsResponse = client.postgrest["set"].select {
-            filter {eq( "id_partido",partido.id) }
+            Pair(partido, listaSets)
         }
-        val listaSets = setsResponse.decodeList<Set>().sortedBy { it.numeroSet }
-
-        // Devolvemos el partido y la lista de los sets de dicho partido
-        Pair(partido, listaSets)
 
     } catch (e: Exception) {
-        null
+        Log.e("SUPABASE", "Error en getAllPartidos: ${e.message}")
+        emptyList() // Devolvemos lista vacía en lugar de null para evitar errores en el LazyColumn
     }
 }
 

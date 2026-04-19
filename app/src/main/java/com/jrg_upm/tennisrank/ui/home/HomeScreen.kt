@@ -50,8 +50,9 @@ import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.model.Partido
 import com.jrg_upm.tennisrank.model.Set
 import com.jrg_upm.tennisrank.supabase.getAllParticipantes
-import com.jrg_upm.tennisrank.supabase.getUltimoPartidoConSets
+import com.jrg_upm.tennisrank.supabase.getAllPartidosConSets
 import com.jrg_upm.tennisrank.supabase.updateResult
+import com.jrg_upm.tennisrank.ui.components.ScoreboardCard
 import kotlinx.coroutines.launch
 
 @Composable
@@ -77,7 +78,9 @@ fun HomeScreen(jugadorActual: Jugador?) {
         // Cargamos todos los jugadores para el ranking
         if (jugadorActual != null) {
             listaRanking = getAllParticipantes(jugadorActual.id)
-            partidoYSets = getUltimoPartidoConSets(jugadorActual.id)
+            val partidos = getAllPartidosConSets(jugadorActual.id, estado = "Pendiente de jugar")
+            val primerPartido = partidos.firstOrNull()
+            partidoYSets = primerPartido
         }
         partidoYSets?.second?.let { listaDeSets ->
             val setsOrdenados = listaDeSets.sortedBy { it.numeroSet }
@@ -128,7 +131,9 @@ fun HomeScreen(jugadorActual: Jugador?) {
                         juegosJ2,
                         listaRanking,
                         { index, valor -> juegosJ1[index] = valor },
-                        { index, valor -> juegosJ2[index] = valor })
+                        { index, valor -> juegosJ2[index] = valor },
+                        editable = true
+                    )
                 } ?: // Si no hay partido se mostrará un texto al usuario
                 Card(
                     modifier = Modifier
@@ -166,8 +171,12 @@ fun HomeScreen(jugadorActual: Jugador?) {
                                 var setsJ1 = 0
                                 var setsJ2 = 0
                                 for (i in 0 until 3) {
-                                    if ((i == 2 && (setsJ1 == 2 || setsJ2 == 2) && juegosJ1[i] != 0 && juegosJ2[i] != 0)) {
-                                        resultadoValido = false
+                                    // Caso en el que se haya ganado 2 sets a 0
+                                    if (i == 2 && (setsJ1 == 2 || setsJ2 == 2)) {
+                                        // Si en este caso el tercer set no está a 0 será un error.
+                                        if(juegosJ1[i] != 0 && juegosJ2[i] != 0){
+                                            resultadoValido = false
+                                        }
                                         break
                                     } else if (
                                         (juegosJ1[i] == 6 && juegosJ2[i] in 0..4) ||
@@ -275,157 +284,6 @@ fun HomeScreen(jugadorActual: Jugador?) {
 
 
 
-// Funciones para la card en la que se mostrará el partido de cada usuario:
-@Composable
-fun ScoreboardCard(
-    partido: Partido,
-    juegosJ1: List<Int>, // Ahora recibe el estado editable de J1
-    juegosJ2: List<Int>, // Ahora recibe el estado editable de J2
-    participantes: List<Participante>,
-    onJuegosJ1Changed: (Int, Int) -> Unit, // Callback para avisar del cambio
-    onJuegosJ2Changed: (Int, Int) -> Unit
-) {
-    // Buscamos los nombres (Corregido idJugador para que coincida con tu modelo)
-    val nombreJ1 = participantes.find { it.id == partido.idJugador1 }
-        ?.jugador?.nombre ?: if (partido.idJugador1 == "SISTEMA_BYE") "DESCANSO" else "Cargando..."
-
-    val nombreJ2 = participantes.find { it.id == partido.idJugador2 }
-        ?.jugador?.nombre ?: if (partido.idJugador2 == "SISTEMA_BYE") "DESCANSO" else "Cargando..."
-
-    // Calculamos cuántos sets ha ganado cada uno para la columna "SETS"
-    val setsGanados = calcularSetsGanados(juegosJ1, juegosJ2)
-
-    // Definimos como se verá la card que contiene el partido
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.DarkGray),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            // Cabecera del marcador
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                listOf("SETS", "1", "2", "3").forEach {
-                    Text(
-                        text = it,
-                        modifier = Modifier.width(44.dp),
-                        textAlign = TextAlign.Center,
-                        color = Color.LightGray,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            }
-
-            // Fila Jugador 1
-            ScoreRow(
-                nombre =  nombreJ1,
-                setsGanados = setsGanados.first,
-                juegos = juegosJ1,
-                onJuegosChanged = onJuegosJ1Changed
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                "VS",
-                color = Color.Cyan, modifier = Modifier.align(Alignment.CenterHorizontally).offset(x = (-30).dp),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Fila Jugador 2
-            ScoreRow(
-                nombre =  nombreJ2,
-                setsGanados = setsGanados.second,
-                juegos = juegosJ2,
-                onJuegosChanged = onJuegosJ2Changed
-            )
-        }
-    }
-}
-
-@Composable
-fun ScoreRow(
-    nombre: String,
-    setsGanados: Int,
-    juegos: List<Int>,
-    onJuegosChanged: (Int, Int) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = nombre,
-            modifier = Modifier
-                .weight(1f)
-                .padding(8.dp),
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1
-        )
-
-        // Columna SETS (No editable, solo visualiza el total)
-        ScoreCell(valor = setsGanados.toString(), editable = false, onValueChange = {})
-
-        // Columnas 1, 2 y 3 (Editables)
-        repeat(3) { index ->
-            ScoreCell(
-                valor = if(juegos[index] == 0 && index >= 0) "" else juegos[index].toString(),
-                editable = true,
-                onValueChange = { nuevoString ->
-                    val num = nuevoString.toIntOrNull() ?: 0
-                    onJuegosChanged(index, num)
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun ScoreCell(
-    valor: String,
-    editable: Boolean = true,
-    onValueChange: (String) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .padding(2.dp)
-            .size(35.dp)
-            .background(color = if (editable) Color(0xFF263238) else Color.DarkGray)
-            .border(1.dp, Color.Gray),
-        contentAlignment = Alignment.Center
-    ) {
-        if (editable) {
-            BasicTextField(
-                value = valor,
-                onValueChange = { newValue ->
-                    // Validamos que sea un número entre 0 y 7
-                    if (newValue.isEmpty() || (newValue.toIntOrNull() != null && newValue.length <= 1)) {
-                        onValueChange(newValue)
-                    }
-                },
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-        } else {
-            // Si no es editable (columna SETS), mostramos un simple Text
-            Text(
-                text = valor,
-                color = Color.Cyan, // Color diferente para destacar los sets ganados
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
 
 fun calcularSetsGanados(juegosJ1: List<Int>, juegosJ2: List<Int>): Pair<Int, Int> {
     var setsJ1 = 0

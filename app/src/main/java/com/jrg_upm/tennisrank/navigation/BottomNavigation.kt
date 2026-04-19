@@ -42,7 +42,7 @@ fun Navigate(
         }
 
         composable("historical", ){
-            HistoricalScreen()
+            HistoricalScreen(jugadorActual)
         }
 
         composable("statistics", ){
