@@ -46,7 +46,7 @@ fun Navigate(
         }
 
         composable("statistics", ){
-            StatisticsScreen()
+            StatisticsScreen(jugadorActual)
         }
 
         composable("profile", ){
