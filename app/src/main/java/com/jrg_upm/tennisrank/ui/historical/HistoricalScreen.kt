@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.jrg_upm.tennisrank.model.Jugador
 import com.jrg_upm.tennisrank.model.Partido
 import com.jrg_upm.tennisrank.model.Set
-import com.jrg_upm.tennisrank.supabase.getAllPartidosConSets
+import com.jrg_upm.tennisrank.supabase.getPartidosPorJornada
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
@@ -30,12 +30,13 @@ import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.supabase.getAllParticipantes
 import com.jrg_upm.tennisrank.ui.components.ScoreboardCard
 import androidx.compose.foundation.lazy.items
+import com.jrg_upm.tennisrank.model.Jornada
 
 @Composable
 fun HistoricalScreen(jugadorActual: Jugador?) {
 
     // variable de estado en la que se guardan todos los partidos que ha jugado un jugador
-    var listaPartidos by remember { mutableStateOf(emptyList<Pair<Partido, List<Set>>>()) }
+    var listaJornadas by remember { mutableStateOf(emptyList<Pair<Jornada,Pair<Partido, List<Set>>>>()) }
 
     var listaRanking by remember { mutableStateOf<List<Participante>>(emptyList()) }
 
@@ -43,7 +44,7 @@ fun HistoricalScreen(jugadorActual: Jugador?) {
         // Cargamos todos los jugadores para el ranking
         if (jugadorActual != null) {
             listaRanking = getAllParticipantes(jugadorActual.id)
-            listaPartidos = getAllPartidosConSets(jugadorActual.id, estado = "Finalizado")
+            listaJornadas = getPartidosPorJornada(jugadorActual.id, estado = "Finalizada")
         }
     }
 
@@ -62,8 +63,9 @@ fun HistoricalScreen(jugadorActual: Jugador?) {
             )
         }
 
-        if(!listaPartidos.isEmpty() ){
-            items(listaPartidos) { partidoYSets ->
+        if(listaJornadas.isNotEmpty() ){
+            items(listaJornadas) { (jornada, partidoYSets) ->
+
                 val juegosJ1 = mutableListOf(0, 0, 0)
                 val juegosJ2 = mutableListOf(0, 0, 0)
 
@@ -73,6 +75,15 @@ fun HistoricalScreen(jugadorActual: Jugador?) {
                         juegosJ2[index] = set.juegosJugador2
                     }
                 }
+
+                Text(
+                    text = "Jornada ${jornada.numero}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                    textAlign = TextAlign.Start
+                )
+
                 ScoreboardCard(
                     partido = partidoYSets.first,
                     juegosJ1 = juegosJ1,
@@ -109,9 +120,6 @@ fun HistoricalScreen(jugadorActual: Jugador?) {
                 }
             }
         }
-
-
-
 
     }
 

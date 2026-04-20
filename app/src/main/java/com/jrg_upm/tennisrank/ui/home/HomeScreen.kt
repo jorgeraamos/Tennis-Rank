@@ -45,12 +45,14 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.jrg_upm.tennisrank.model.Jornada
 import com.jrg_upm.tennisrank.model.Jugador
 import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.model.Partido
 import com.jrg_upm.tennisrank.model.Set
 import com.jrg_upm.tennisrank.supabase.getAllParticipantes
 import com.jrg_upm.tennisrank.supabase.getAllPartidosConSets
+import com.jrg_upm.tennisrank.supabase.getPartidosPorJornada
 import com.jrg_upm.tennisrank.supabase.updateResult
 import com.jrg_upm.tennisrank.ui.components.ScoreboardCard
 import kotlinx.coroutines.launch
@@ -61,6 +63,8 @@ fun HomeScreen(jugadorActual: Jugador?) {
     val nombreJugador = jugadorActual?.nombre ?: "Cargando..."
     // Variable estado para la lista de jugadores del ranking
     var listaRanking by remember { mutableStateOf<List<Participante>>(emptyList()) }
+
+    var jornadaActual by remember{ mutableStateOf<Jornada?>(null) }
 
     var partidoYSets by remember { mutableStateOf<Pair<Partido, List<Set>>?>(null) }
 
@@ -78,18 +82,30 @@ fun HomeScreen(jugadorActual: Jugador?) {
         // Cargamos todos los jugadores para el ranking
         if (jugadorActual != null) {
             listaRanking = getAllParticipantes(jugadorActual.id)
-            val partidos = getAllPartidosConSets(jugadorActual.id, estado = "Pendiente de jugar")
-            val primerPartido = partidos.firstOrNull()
-            partidoYSets = primerPartido
-        }
-        partidoYSets?.second?.let { listaDeSets ->
-            val setsOrdenados = listaDeSets.sortedBy { it.numeroSet }
-            setsOrdenados.forEachIndexed { index, set ->
-                if (index < 3) { // Evitamos salirnos del array si hay más de 3
-                    juegosJ1[index] = set.juegosJugador1
-                    juegosJ2[index] = set.juegosJugador2
+
+            val listaJornadas = getPartidosPorJornada(jugadorActual.id, estado = "Abierta")
+
+            val jornadaYPartido = listaJornadas.firstOrNull()
+
+            if (jornadaYPartido != null) {
+                jornadaActual = jornadaYPartido.first
+                partidoYSets = jornadaYPartido.second
+                partidoYSets?.second?.let { listaDeSets ->
+                    val setsOrdenados = listaDeSets.sortedBy { it.numeroSet }
+                    setsOrdenados.forEachIndexed { index, set ->
+                        if (index < 3) { // Evitamos salirnos del array si hay más de 3
+                            juegosJ1[index] = set.juegosJugador1
+                            juegosJ2[index] = set.juegosJugador2
+                        }
+                    }
                 }
             }
+        } else{
+            // Si no hay partidos pendientes, limpiamos los estados
+            jornadaActual = null
+            partidoYSets = null
+            juegosJ1.fill(0)
+            juegosJ2.fill(0)
         }
     }
     Scaffold(
@@ -125,6 +141,13 @@ fun HomeScreen(jugadorActual: Jugador?) {
                 // Card que contendrá el próximo partido de cada jugador
                 partidoYSets?.let { (partido, sets) ->
                     // Pasamos los datos reales a la Card
+                    Text(
+                        text = "Jornada ${jornadaActual?.numero}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                        textAlign = TextAlign.Start
+                    )
                     ScoreboardCard(
                         partido,
                         juegosJ1,

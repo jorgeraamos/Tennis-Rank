@@ -11,6 +11,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_URL
 import com.jrg_upm.tennisrank.BuildConfig.SUPABASE_KEY
+import com.jrg_upm.tennisrank.model.Jornada
 import com.jrg_upm.tennisrank.model.Jugador
 import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.model.Partido
@@ -186,7 +187,6 @@ suspend fun updatePlayerData(
 }
 
 // Función para obtener todos los partidos del usuario:
-
 suspend fun getAllPartidosConSets(idJugador: String, estado: String): List<Pair<Partido, List<Set>>> {
     return try {
         // Obtenemos todos los partidos que coincidan con el filtro de estado, para así
@@ -219,6 +219,54 @@ suspend fun getAllPartidosConSets(idJugador: String, estado: String): List<Pair<
     } catch (e: Exception) {
         Log.e("SUPABASE", "Error en getAllPartidos: ${e.message}")
         emptyList() // Devolvemos lista vacía en lugar de null para evitar errores en el LazyColumn
+    }
+}
+
+
+suspend fun getPartidosPorJornada(idJugador: String, estado: String): List<Pair<Jornada, Pair<Partido, List<Set>>>> {
+    return try {
+        // Buscamos todas las jornadas que tengan el estado indicado
+        val jornadas = client.postgrest["jornada"].select {
+            filter { eq("estado", estado) }
+            order("numero", Order.DESCENDING)
+        }.decodeList<Jornada>()
+
+        //Mapeamos cada jornada para buscar el partido del usuario en ella
+        jornadas.mapNotNull { jornada ->
+            // Buscamos el partido del jugador en ESTA jornada
+            val partidoResponse = client.postgrest["partido"].select {
+                filter {
+                    and {
+                        eq("id_jornada", jornada.id)
+                        or {
+                            eq("id_jugador1", idJugador)
+                            eq("id_jugador2", idJugador)
+                        }
+                    }
+                }
+                limit(1)
+            }
+
+            val partido = partidoResponse.decodeSingleOrNull<Partido>()
+
+            if (partido != null) {
+                // Si hay partido, buscamos sus sets
+                val setsResponse = client.postgrest["set"].select {
+                    filter { eq("id_partido", partido.id) }
+                }
+                val listaSets = setsResponse.decodeList<Set>().sortedBy { it.numeroSet }
+
+                // Devolvemos el trío Jornada -> (Partido, Sets)
+                Pair(jornada, Pair(partido, listaSets))
+            } else {
+                // Si el jugador no tiene partido en esta jornada, devolvemos null
+                // y mapNotNull lo eliminará de la lista final
+                null
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("SUPABASE", "Error obteniendo partidos por jornadas: ${e.message}")
+        emptyList()
     }
 }
 
@@ -294,6 +342,16 @@ suspend fun updateResult(
                     eq("id_partido", idPartido)
                     eq("numero_set", i + 1)
                 }
+            }
+        }
+        // Actualizamos el estado del partido
+        client.postgrest["partido"].update(
+            {
+                set("estado", "Jugado")
+            }
+        ){
+            filter {
+                eq("id", idPartido)
             }
         }
         Log.d("SUPABASE", "Todos los sets actualizados")
