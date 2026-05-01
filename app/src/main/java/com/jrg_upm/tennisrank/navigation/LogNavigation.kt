@@ -7,7 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jrg_upm.tennisrank.ui.auth.LoginScreen
 import com.jrg_upm.tennisrank.ui.auth.RegisterScreen
-import com.jrg_upm.tennisrank.viewModel.Menu.MenuViewModel
+import com.jrg_upm.tennisrank.viewModel.Auth.LoginViewModel
+import com.jrg_upm.tennisrank.viewModel.Auth.RegisterViewModel
+import com.jrg_upm.tennisrank.viewModel.menu.MenuViewModel
 
 
 // Definimos las distintas pantallas a las que podemos navegar a la hora de iniciar sesión:
@@ -17,7 +19,10 @@ fun LogNavigation(navController: NavHostController) {
     {
         // Ruta del login:
         composable("login"){
+            // Instanciamos el ViewModel
+            val loginViewModel: LoginViewModel = viewModel()
             LoginScreen(
+                viewModel = loginViewModel,
                 onLoginSuccess = {
                     navController.navigate("menu"){
                         popUpTo("login") { inclusive = true }
@@ -31,7 +36,9 @@ fun LogNavigation(navController: NavHostController) {
 
         // Ruta del registro:
         composable("register") {
+            val registerViewModel: RegisterViewModel = viewModel()
             RegisterScreen(
+                viewModel = registerViewModel,
                 onRegisterSuccess = {
                     // Tras registrarse, volvemos al login (o podrías ir directo al home)
                     navController.navigate("login") {

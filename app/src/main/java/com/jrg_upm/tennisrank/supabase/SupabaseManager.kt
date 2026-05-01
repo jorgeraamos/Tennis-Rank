@@ -106,19 +106,6 @@ suspend fun getCurrentPlayer(): Jugador? {
 }
 
 
-// FUNCION PARA OBTENER EL RANKING ACTUAL
-suspend fun getAllPlayers(): List<Jugador> {
-    return try {
-        // Cogemos a todos los jugadores ordenados por sus puntos
-        client.postgrest["jugador"].select {
-            order("puntos_actuales", order = Order.DESCENDING)
-        }.decodeList<Jugador>()
-    } catch (e: Exception) {
-        e.printStackTrace()
-        emptyList()
-    }
-}
-
 
 // FUNCION PARA SUBIR LAS FOTOS DE PERFIL PARA CADA USUARIO EN EL STORAGE DE SUPABASE
 suspend fun uploadProfileImage(userId: String, imageBytes: ByteArray): String {

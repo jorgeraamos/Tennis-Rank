@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.viewModel.Profile
+package com.jrg_upm.tennisrank.viewModel.profile
 
 import android.util.Log
 import androidx.compose.runtime.getValue

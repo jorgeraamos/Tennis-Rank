@@ -13,7 +13,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.jrg_upm.tennisrank.ui.theme.TennisRankTheme
-import com.jrg_upm.tennisrank.viewModel.Menu.MenuViewModel
+import com.jrg_upm.tennisrank.viewModel.menu.MenuViewModel
 
 @Composable
 fun MenuScreen(viewModel: MenuViewModel, onLogout: () -> Unit) {

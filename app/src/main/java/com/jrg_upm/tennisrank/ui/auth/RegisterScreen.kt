@@ -15,32 +15,27 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jrg_upm.tennisrank.supabase.registerUser
+import com.jrg_upm.tennisrank.viewModel.Auth.RegisterViewModel
 import kotlinx.coroutines.launch
 
 // Función en la que se define la screen del inicio de sesión:
 @Composable
-fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
-    // Nos creamos las variables state para el correo y la contraseña que debe introducir el usuario:
-    var user_name by remember{ mutableStateOf("") }
-    var user_email by remember{ mutableStateOf("") }
-    var password by remember{ mutableStateOf("") }
-    var password_repetead by remember{ mutableStateOf("") }
-
-
+fun RegisterScreen(
+    viewModel: RegisterViewModel = viewModel(),  // viewModel que contiene la lógica de la pantalla
+    onRegisterSuccess: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
     // Al igual que en el login, scope es necesario para que la app no se quede colgada esperando a la función suspend
-
     val scope = rememberCoroutineScope()
 
     // State para controlar los popUps de error:
@@ -57,11 +52,11 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 32.dp)
+                .padding(32.dp)
         ){
             // Ponemos el título de la aplicación
             Text(
-                text = "REGISTRO CUENTA",
+                text = "Registro Cuenta",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1976D2)  // Color Azul
@@ -71,8 +66,8 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
 
             // Campo para introducir el correo:
             OutlinedTextField(
-                value = user_name,
-                onValueChange = { user_name = it},
+                value = viewModel.user_name,
+                onValueChange = { viewModel.user_name = it},
                 label = { Text("Nombre y Apellidos:") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -82,8 +77,8 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
 
             // Campo para introducir el correo:
             OutlinedTextField(
-                value = user_email,
-                onValueChange = { user_email = it},
+                value = viewModel.email,
+                onValueChange = { viewModel.email = it},
                 label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -92,8 +87,8 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = { password = it},
+                value = viewModel.password,
+                onValueChange = { viewModel.password = it},
                 label = { Text("Contraseña: Mínimo 8 carácteres") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
@@ -103,8 +98,8 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = password_repetead,
-                onValueChange = { password_repetead = it},
+                value = viewModel.passwordRepeated,
+                onValueChange = { viewModel.passwordRepeated = it},
                 label = { Text("Confirmar Contraseña") },
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
@@ -112,7 +107,7 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
             )
 
             // Añadimos un espacio para los botones:
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Botón para volver hacia atrás
             Row(
@@ -125,7 +120,8 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
                         // Volvemos a la pantalla de inicio de sesión
                         onNavigateBack()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !viewModel.isLoading
                 ){
                     Text("Volver")
                 }
@@ -133,44 +129,20 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit, onNavigateBack: () -> Unit) {
                 // Botón para registrarse:
                 Button(
                     onClick = {
-                        if( password.equals(password_repetead) && password.length >= 8 ){
-                            scope.launch {
-                                val success = registerUser(user_email, password, user_name)
-                                if(success){  // Si la verificación ha sido correcta ejecutamos la función de success
-                                    onRegisterSuccess()
-                                }
-                                else{  // En caso contrario mostramos un mensaje de error
-                                    snackbarHostState.showSnackbar("Error: Al registrarse, vuelva a intentarlo")
-                                }
+                        viewModel.onRegisterClick(
+                            onSuccess = onRegisterSuccess,
+                            onError = {message ->
+                                scope.launch {snackbarHostState.showSnackbar(message)}
                             }
-
-                        } // En caso contrario mostramos un mensaje de error:
-                        else if( ! password.equals(password_repetead)){
-                            scope.launch{
-                                snackbarHostState.showSnackbar("Las contraseñas no coinciden")
-                            }
-                        }
-                        else if( password.length <8){
-                            scope.launch{
-                                snackbarHostState.showSnackbar("La contraseña introducida es muy corta")
-                            }
-                        }
-                        else{
-                            scope.launch{
-                                snackbarHostState.showSnackbar("Error al registrarse, compruebe bien los campos")
-                            }
-                        }
-
+                        )
                     },
+                    enabled = !viewModel.isLoading,
                     modifier = Modifier.weight(1f)
                 ){
-                    Text("Registrarse")
+                    Text(if (viewModel.isLoading) "Registrando..." else "Registrarse")
                 }
-
             }
-
         }
-
     }
 }
 

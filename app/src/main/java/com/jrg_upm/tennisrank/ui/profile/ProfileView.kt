@@ -21,7 +21,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -46,7 +45,7 @@ import coil.compose.AsyncImage
 import com.jrg_upm.tennisrank.ui.components.DatePickerField
 import com.jrg_upm.tennisrank.ui.components.InforRow
 import com.jrg_upm.tennisrank.ui.components.SelectorOpciones
-import com.jrg_upm.tennisrank.viewModel.Profile.ProfileViewModel
+import com.jrg_upm.tennisrank.viewModel.profile.ProfileViewModel
 import kotlinx.coroutines.launch
 // Imports para calcular la edad
 

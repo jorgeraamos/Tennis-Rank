@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.viewModel.Profile
+package com.jrg_upm.tennisrank.viewModel.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

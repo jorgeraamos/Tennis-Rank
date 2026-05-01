@@ -1,4 +1,4 @@
-package com.jrg_upm.tennisrank.viewModel.Menu
+package com.jrg_upm.tennisrank.viewModel.menu
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

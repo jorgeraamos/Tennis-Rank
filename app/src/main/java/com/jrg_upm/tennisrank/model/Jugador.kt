@@ -8,8 +8,6 @@ data class Jugador(
     @SerialName("id") val id: String,
     @SerialName("nombre_completo") val nombre: String,
     @SerialName("email") val email: String = "", // Valor por defecto
-    @SerialName("puntos_actuales") val puntos: Int = 0,
-    @SerialName("posicion_ranking") val posicionRanking: Int = 0,
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("pais") val pais: String? = null,
     @SerialName("fecha_nacimiento") val fechaNacimiento: String? = null,

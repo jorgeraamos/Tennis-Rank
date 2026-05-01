@@ -338,17 +338,34 @@ fun ScoreCell(
     }
 }
 
+// Caja donde aparecerá los porcentajes:
+@Composable
+fun StatBox(label: String, ganado: Int, total: Int, color: Color) {
+    val ratio = if (total > 0) ganado.toFloat() / total.toFloat() else 0f
+    Column( horizontalAlignment = Alignment.CenterHorizontally) {
+        CircularProgressBar(
+            percentage = ratio,
+            number = ganado,
+            color = color
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = Color.LightGray)
+        Text("$ganado/$total", style = MaterialTheme.typography.labelSmall, color = Color.White)
+    }
+}
+
+
 // Círculo para enseñar las estadísticas de cada jugador:
 @Composable
 fun CircularProgressBar(
     percentage: Float,
     number: Int,
     fontSize: TextUnit = 28.sp,
-    radius: Dp = 50.dp,
+    radius: Dp = 35.dp,
     color: Color = Color.Green,
     strokeWidth: Dp = 8.dp,
     animationDuration: Int = 1000,
-    animDelay: Int = 0
+    animDelay: Int = 1
 ) {
     // Estado que describe si está en ejecución o no
     var animationPlayed by remember{
@@ -383,8 +400,8 @@ fun CircularProgressBar(
             )
         }
         Text (
-            text = (curPercentage.value * number).toInt().toString(),
-            color = Color.Black,
+            text = number.toString(),
+            color = Color.White,
             fontSize = fontSize,
             fontWeight = FontWeight.Bold
         )
