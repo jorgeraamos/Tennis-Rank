@@ -174,47 +174,11 @@ suspend fun updatePlayerData(
 }
 
 // Función para obtener todos los partidos del usuario:
-suspend fun getAllPartidosConSets(idJugador: String, estado: String): List<Pair<Partido, List<Set>>> {
-    return try {
-        // Obtenemos todos los partidos que coincidan con el filtro de estado, para así
-        // poder separar ver los partidos ya jugados a los que ya se han jugado
-        val response = client.postgrest["partido"].select {
-            filter {
-                and {
-                    eq("estado", estado)
-                    or {
-                        eq("id_jugador1", idJugador)
-                        eq("id_jugador2", idJugador)
-                    }
-                }
-            }
-            order(column = "id_jornada", order = Order.DESCENDING)
-        }
-
-        val partidos = response.decodeList<Partido>()
-
-        // Mapeamos cada partido a su par con sets
-        partidos.map { partido ->
-            val setsResponse = client.postgrest["set"].select {
-                filter { eq("id_partido", partido.id) }
-            }
-            val listaSets = setsResponse.decodeList<Set>().sortedBy { it.numeroSet }
-
-            Pair(partido, listaSets)
-        }
-
-    } catch (e: Exception) {
-        Log.e("SUPABASE", "Error en getAllPartidos: ${e.message}")
-        emptyList() // Devolvemos lista vacía en lugar de null para evitar errores en el LazyColumn
-    }
-}
-
-
-suspend fun getPartidosPorJornada(idJugador: String, estado: String): List<Pair<Jornada, Pair<Partido, List<Set>>>> {
+suspend fun getPartidosPorJornada(idJugador: String, idEdicion: Int): List<Pair<Jornada, Pair<Partido, List<Set>>>> {
     return try {
         // Buscamos todas las jornadas que tengan el estado indicado
         val jornadas = client.postgrest["jornada"].select {
-            filter { eq("estado", estado) }
+            filter { eq("id_edicion", idEdicion ) }
             order("numero", Order.DESCENDING)
         }.decodeList<Jornada>()
 
@@ -258,36 +222,47 @@ suspend fun getPartidosPorJornada(idJugador: String, estado: String): List<Pair<
 }
 
 
-// Función para obtener a todos los participantes de la edición en la que participa el usuario:
-// Recordemos que un usuario solo puede estar activo en una única edición
-suspend fun getAllParticipantes(idJugador: String): List<Participante> {
-    val idEdicion = try {
-        // Traemos todas las ediciones donde participa el usuario
+suspend fun getEdicionJugador(idJugador: String): Int? {
+    return try {
+        // Traemos las ediciones donde participa el usuario
         val responseParticipa = client.postgrest["participa"].select(Columns.list("id_edicion")) {
             filter { eq("id_jugador", idJugador) }
         }
-        val ediciones = responseParticipa.decodeList<Map<String, Int>>().map { it["id_edicion"] }
 
-        if (ediciones.isEmpty()) return emptyList()
+        // Decodificamos la lista de IDs
+        val listaEdiciones = responseParticipa.decodeList<Map<String, Int>>()
+            .mapNotNull { it["id_edicion"] }
 
-        // Buscamos de sus ediciones la que está activa a través de la tabla edicion
-        // Recordar que un jugador solo puede estar en una edicion activa.
+        // Si no participa en ninguna, devolvemos null
+        if (listaEdiciones.isEmpty()) return null
+
+        // Buscamos de sus ediciones la que está "activa"
         val responseEdicion = client.postgrest["edicion"].select(Columns.list("id")) {
             filter {
-                isIn("id", ediciones as List<Any>)
+                // Usamos la lista de IDs obtenida arriba
+                isIn("id", listaEdiciones as List<Any>)
                 eq("estado", "activo")
             }
             limit(1)
         }
 
-        val edicionActiva = responseEdicion.decodeList<Map<String, Int>>()
-        if (edicionActiva.isNotEmpty()) {
-            edicionActiva[0]["id"] ?: return emptyList()
-        } else {
-            return emptyList()
-        }
+        // Decodificamos el resultado único y devolvemos el ID
+        val edicionActiva = responseEdicion.decodeSingleOrNull<Map<String, Int>>()
+        edicionActiva?.get("id")
+
     } catch (e: Exception) {
-        println("Error en la búsqueda de edición: ${e.message}")
+        println("Error al obtener edición: ${e.message}")
+        null
+    }
+}
+
+
+// Función para obtener a todos los participantes de la edición en la que participa el usuario:
+// Recordemos que un usuario solo puede estar activo en una única edición
+suspend fun getAllParticipantes(idJugador: String, idEdicion: Int): List<Participante> {
+
+    // Comprobamos que la edición no sea null
+    if(idEdicion == null){
         return emptyList()
     }
 

@@ -15,9 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AirplaneTicket
 import androidx.compose.material.icons.filled.AirplanemodeActive
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Card
@@ -26,10 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,121 +31,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.jrg_upm.tennisrank.model.Jornada
 import com.jrg_upm.tennisrank.model.Jugador
 import com.jrg_upm.tennisrank.model.Partido
 import com.jrg_upm.tennisrank.model.Set
-import com.jrg_upm.tennisrank.supabase.getPartidosPorJornada
 import com.jrg_upm.tennisrank.ui.components.StatBox
+import com.jrg_upm.tennisrank.viewModel.statistics.StatisticsViewModel
 
 @Composable
-fun StatisticsScreen(jugadorActual: Jugador?) {
-    // variable de estado en la que se guardan todos los partidos que ha jugado un jugador
-    var listaPartidos by remember { mutableStateOf(emptyList<Pair<Partido, List<Set>>>()) }
-    var totalPartidos by remember { mutableStateOf(0) }
-    var partidosGanados by remember { mutableStateOf(0) }
-    var totalSets by remember { mutableStateOf(0) }
-    var setsGanados by remember { mutableStateOf(0) }
-    var totalJuegos by remember { mutableStateOf(0) }
-    var juegosGanados by remember { mutableStateOf(0) }
-    var racha by remember { mutableStateOf(emptyList<Boolean>()) }
-    var tieBreaksGanados by remember { mutableStateOf(0) }
-    var tieBreaksTotales by remember { mutableStateOf(0) }
-    var remontadas by remember { mutableStateOf(0) }
-    var totalPartidosComoVisitante by remember { mutableStateOf(0) }
-    var victoriasComoVisitante by remember { mutableStateOf(0) }
-
-
-    LaunchedEffect(jugadorActual) {
-        // Cargamos todos los jugadores para el ranking
-        if (jugadorActual != null) {
-            val listaJornadas = getPartidosPorJornada(jugadorActual.id, estado = "Finalizada")
-            listaPartidos = listaJornadas.map{it.second}
-            if(listaPartidos.isNotEmpty()){
-                // Obtenemos el número total de partidos que ha disputado el usuario
-                totalPartidos = listaPartidos.size
-                // Obtenemos el número total de partidos que ha ganado
-                partidosGanados = listaPartidos.count { (partido, _ ) ->
-                    partido.idGanador == jugadorActual.id }
-
-                racha = listaPartidos.take(5)  // Cogemos los 5 últimos partidos
-                    .map { (partido, _) -> partido.idGanador == jugadorActual.id }
-                    .reversed()  // Invertimos para que el más antiguo salga a la izquierda
-
-                // Ahora recogemos el total de sets y los sets ganados por el jugador:
-                // Utilizamos variables auxiliares en caso de que pudiera cambiar el jugador para no duplicar los valores
-                var auxSetsGanados = 0
-                var auxTotalSets = 0
-                var auxJuegosGanados = 0
-                var auxTotalJuegos = 0
-                var auxRemontadas = 0
-                var auxTieBreaksGanados = 0
-                var auxTieBreaksTotales = 0
-                var auxPartidosComoVisitante = 0
-                var auxVictoriasComoVisitante = 0
-
-                listaPartidos.forEach { (partido, sets) ->
-                    if(partido.idJugador2 == jugadorActual.id){
-                        auxPartidosComoVisitante++
-                        if(partido.idGanador == jugadorActual.id){
-                            auxVictoriasComoVisitante++
-                        }
-                    }
-                    // Miramos cada set
-                    sets.forEach { set ->
-                        val juegosJugador1 = set.juegosJugador1
-                        val juegosJugador2 = set.juegosJugador2
-                        // Comprobamos si el jugadorActual es el Jugador 1 o el 2 en este partido
-                        if (partido.idJugador1 == jugadorActual.id) {
-                            if (juegosJugador1> juegosJugador2) {
-                                auxSetsGanados++
-                                auxTotalSets++
-                            } else if (juegosJugador1 < juegosJugador2) {
-                                // Comprobamos que el set se ha jugado (puede que el 3º set no se haya jugado)
-                                auxTotalSets++
-
-                                // Comprobamos además con el primer set si el partido se ha remontado:
-                                if( set.numeroSet == 1 && partido.idGanador == jugadorActual.id )
-                                    auxRemontadas++
-                            }
-                            auxJuegosGanados += juegosJugador1
-
-                            // Miramos los tie breaks:
-                            if ((juegosJugador1 == 7 && juegosJugador2 == 6) || (juegosJugador1 == 6 && juegosJugador2 == 7)) {
-                                auxTieBreaksTotales++ // Siempre sumamos al total si hubo tie-break
-                                if (juegosJugador1== 7) auxTieBreaksGanados++ // Sumamos a ganados solo si lo ganó J1
-                            }
-
-                        } else {
-                            if (juegosJugador2 > juegosJugador1){
-                                auxSetsGanados++
-                                auxTotalSets++
-                            }else if(juegosJugador2 < juegosJugador1){
-                                auxTotalSets++
-
-                                // Comprobamos además con el primer set si el partido se ha remontado:
-                                if( set.numeroSet == 1 && partido.idGanador == jugadorActual.id )
-                                    auxRemontadas++
-                            }
-                            auxJuegosGanados += juegosJugador2
-                            // Miramos los tie breaks:
-                            if ((juegosJugador2 == 7 && juegosJugador1 == 6) || (juegosJugador1 == 6 && juegosJugador2 == 7)) {
-                                auxTieBreaksTotales++
-                                if (juegosJugador2 == 7) auxTieBreaksGanados++
-                            }
-                        }
-                        auxTotalJuegos += set.juegosJugador1 + set.juegosJugador2
-                    }
-                }
-                setsGanados = auxSetsGanados
-                totalSets = auxTotalSets
-                juegosGanados = auxJuegosGanados
-                totalJuegos = auxTotalJuegos
-                remontadas = auxRemontadas
-                tieBreaksGanados = auxTieBreaksGanados
-                tieBreaksTotales = auxTieBreaksTotales
-                totalPartidosComoVisitante = auxPartidosComoVisitante
-                victoriasComoVisitante = auxVictoriasComoVisitante
-            }
+fun StatisticsScreen(
+    jugadorActual: Jugador?,
+    listaJornadas: List<Pair<Jornada, Pair<Partido, List<Set>>>>,
+    viewModel: StatisticsViewModel = viewModel()
+) {
+    // Cada vez que la lista de jornadas o el jugador cambien, recalculamos
+    LaunchedEffect(jugadorActual, listaJornadas) {
+        jugadorActual?.let {
+            viewModel.calcularEstadisticas(it.id, listaJornadas)
         }
     }
 
@@ -168,8 +65,9 @@ fun StatisticsScreen(jugadorActual: Jugador?) {
             Text(
                 text = "Mis Estadísticas",
                 style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 20.dp),
-                color = Color.Cyan
+                color = Color(0xFF1976D2)
             )
         }
         item {
@@ -181,11 +79,11 @@ fun StatisticsScreen(jugadorActual: Jugador?) {
                     horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally)
                 ){
                     // Stats partidos ganados
-                    StatBox("Partidos", partidosGanados, totalPartidos, Color.Cyan)
+                    StatBox("Partidos", viewModel.partidosGanados, viewModel.totalPartidos, color = Color(0xFF27C2F5))
                     // Stats sets ganados
-                    StatBox("Sets", setsGanados, totalSets, Color.Green)
+                    StatBox("Sets", viewModel.setsGanados, viewModel.totalSets, color = Color(0xFF27F55B))
                     // Stats juegos ganados
-                    StatBox("Juegos", juegosGanados, totalJuegos, Color.Yellow)
+                    StatBox("Juegos", viewModel.juegosGanados, viewModel.totalJuegos, Color(0xFFF5DA27))
                 }
             }
         }
@@ -200,7 +98,7 @@ fun StatisticsScreen(jugadorActual: Jugador?) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    if (racha.isEmpty()) {
+                    if (viewModel.racha.isEmpty()) {
                         Text(
                             "No hay partidos registrados",
                             color = Color.Gray,
@@ -210,7 +108,7 @@ fun StatisticsScreen(jugadorActual: Jugador?) {
                         repeat(5){index ->
                             // Para los partidos que se han jugado pintamos V o D, pero los partidos que no
                             // se hayan jugado hasta llegar a 5 se pintan en gris
-                            val resultado = racha.getOrNull(index)
+                            val resultado = viewModel.racha.getOrNull(index)
                             if(resultado != null){
                                 RachaItem(victoria = resultado, activo = true)
                             }else{
@@ -227,29 +125,28 @@ fun StatisticsScreen(jugadorActual: Jugador?) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // Fila de Remontadas
                     HitoRow(
-
                         label = "Remontadas",
-                        value = "$remontadas",
+                        value = "${viewModel.remontadas}",
                         sublabel = "Partidos ganados tras perder el 1º set",
                         icon = Icons.Default.Whatshot,  // Fuego de remontada
                         iconColor = Color(0xFFFF5722)  // Color naranja
                     )
 
                     // Fila de Tie-breaks
-                    val ratioTieBreak = if(tieBreaksTotales > 0)
-                        (tieBreaksGanados.toFloat() / tieBreaksTotales * 100).toInt() else 0
+                    val ratioTieBreak = if(viewModel.tieBreaksTotales > 0)
+                        (viewModel.tieBreaksGanados.toFloat() / viewModel.tieBreaksTotales * 100).toInt() else 0
 
                     HitoRow(
                         label = "Tie-breaks Ganados",
                         value = "$ratioTieBreak%",
-                        sublabel = "Has ganado $tieBreaksGanados de $tieBreaksTotales disputados",
+                        sublabel = "Has ganado ${viewModel.tieBreaksGanados} de ${viewModel.tieBreaksTotales} disputados",
                         icon = Icons.Default.Psychology,  // Icono de mentalidad
                         iconColor = Color(0xFF27BEF5)  // Color azul
                     )
 
                     // Fila victorias como visitante
-                    val ratioVisitante = if(totalPartidosComoVisitante > 0)
-                        (victoriasComoVisitante.toFloat() / totalPartidosComoVisitante * 100).toInt() else 0
+                    val ratioVisitante = if(viewModel.totalPartidosComoVisitante > 0)
+                        (viewModel.victoriasComoVisitante.toFloat() / viewModel.totalPartidosComoVisitante * 100).toInt() else 0
 
                     HitoRow(
                         label = "Victorias como visitante",
@@ -354,7 +251,7 @@ fun HitoRow(
         Text(
             text = value,
             style = MaterialTheme.typography.headlineSmall,
-            color = Color.Cyan,
+            color = Color.White,
             fontWeight = FontWeight.ExtraBold
         )
     }

@@ -24,7 +24,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.jrg_upm.tennisrank.supabase.registerUser
 import com.jrg_upm.tennisrank.viewModel.Auth.RegisterViewModel
 import kotlinx.coroutines.launch
 

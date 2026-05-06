@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.model.Partido
-import com.jrg_upm.tennisrank.ui.home.calcularSetsGanados
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -236,7 +235,7 @@ fun ScoreboardCard(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 "VS",
-                color = Color.Cyan, modifier = Modifier.align(Alignment.CenterHorizontally).offset(x = (-30).dp),
+                color = Color.White, modifier = Modifier.align(Alignment.CenterHorizontally).offset(x = (-30).dp),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
@@ -330,12 +329,31 @@ fun ScoreCell(
             // Si no es editable (columna SETS), mostramos un simple Text
             Text(
                 text = valor,
-                color = Color.Cyan, // Color diferente para destacar los sets ganados
+                color = Color(0xFFF5F527), // Color diferente para destacar los sets ganados
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
             )
         }
     }
+}
+
+
+
+fun calcularSetsGanados(juegosJ1: List<Int>, juegosJ2: List<Int>): Pair<Int, Int> {
+    var setsJ1 = 0
+    var setsJ2 = 0
+    for (i in 0 until 3) {
+        if(
+            (juegosJ1[i] == 6 && juegosJ1[i] > juegosJ2[i] && juegosJ2[i] >= 0) ||
+            (juegosJ1[i] == 7 && (juegosJ2[i] == 6 || juegosJ2[i] == 5))){
+            setsJ1 ++
+        }else if(
+            (juegosJ2[i] == 6 && juegosJ2[i] > juegosJ1[i] && juegosJ1[i] >= 0) ||
+            (juegosJ2[i] == 7 && (juegosJ1[i] == 6 || juegosJ1[i] == 5))){
+            setsJ2++
+        }
+    }
+    return Pair<Int, Int>(setsJ1, setsJ2)
 }
 
 // Caja donde aparecerá los porcentajes:

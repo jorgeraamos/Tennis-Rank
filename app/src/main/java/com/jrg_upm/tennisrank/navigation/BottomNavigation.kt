@@ -23,6 +23,7 @@ import com.jrg_upm.tennisrank.ui.historical.HistoricalScreen
 import com.jrg_upm.tennisrank.ui.home.HomeScreen
 import com.jrg_upm.tennisrank.ui.profile.ProfileScreen
 import com.jrg_upm.tennisrank.ui.statistics.StatisticsScreen
+import com.jrg_upm.tennisrank.viewModel.menu.MenuViewModel
 import com.jrg_upm.tennisrank.viewModel.profile.ProfileViewModel
 import com.jrg_upm.tennisrank.viewModel.profile.ProfileViewModelFactory
 
@@ -31,28 +32,28 @@ import com.jrg_upm.tennisrank.viewModel.profile.ProfileViewModelFactory
 @Composable
 fun Navigate(
     navController: NavHostController,
-    jugadorActual: Jugador?,
+    menuViewModel: MenuViewModel, // Recibimos el ViewModel del padre
     onLogout: () -> Unit,
     onProfileUpdated: () -> Unit  // Función para actualizar al jugador actual en caso de cambios
 ) {
     NavHost(navController = navController, startDestination = "home"){
         // Para cada ruta definimos la función que se ejecuta
         composable("home", ){
-            HomeScreen(jugadorActual)
+            HomeScreen(menuViewModel.jugadorActual, menuViewModel.listaRanking, menuViewModel.listaJornadas)
         }
 
         composable("historical", ){
-            HistoricalScreen(jugadorActual)
+            HistoricalScreen(menuViewModel.jugadorActual, menuViewModel.listaRanking, menuViewModel.listaJornadas)
         }
 
         composable("statistics", ){
-            StatisticsScreen(jugadorActual)
+            StatisticsScreen(menuViewModel.jugadorActual, menuViewModel.listaJornadas)
         }
 
         composable("profile", ){
             // Instanciamos el ViewModel:
             val viewModel: ProfileViewModel = viewModel(
-                factory = ProfileViewModelFactory(jugadorActual)
+                factory = ProfileViewModelFactory(menuViewModel.jugadorActual)
             )
             ProfileScreen(viewModel = viewModel, onLogout = onLogout, onSaveSuccess = onProfileUpdated)
         }
