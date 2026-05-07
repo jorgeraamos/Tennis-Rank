@@ -25,6 +25,7 @@ import com.jrg_upm.tennisrank.ui.components.ScoreboardCard
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.text.font.FontWeight
 import com.jrg_upm.tennisrank.model.Jornada
+import com.jrg_upm.tennisrank.ui.components.infoJornada
 
 @Composable
 fun HistoricalScreen(jugadorActual: Jugador?, listaRanking: List<Participante>, listaJornadas: List<Pair<Jornada, Pair<Partido, List<Set>>>>) {
@@ -62,13 +63,8 @@ fun HistoricalScreen(jugadorActual: Jugador?, listaRanking: List<Participante>, 
                     }
                 }
 
-                Text(
-                    text = "Jornada ${jornada?.numero}: ${jornada?.fechaInicio} - ${jornada?.fechaFin} ",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Black,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                    textAlign = TextAlign.Start
-                )
+                // Mostramos la información de la jornada:
+                infoJornada(jornada, partidoYSets.first, jugadorActual!!.id)
 
                 ScoreboardCard(
                     partido = partidoYSets.first,

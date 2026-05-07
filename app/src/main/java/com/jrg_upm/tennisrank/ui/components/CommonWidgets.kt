@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -28,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -53,8 +56,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jrg_upm.tennisrank.model.Jornada
 import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.model.Partido
+import com.jrg_upm.tennisrank.ui.statistics.RachaItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -179,6 +184,54 @@ fun DatePickerField(fechaSeleccionada: String, onFechaCambiada: (String) -> Unit
     }
 }
 
+// Función para mostrar la información de la Jornada pasada como argumento:
+@Composable
+fun infoJornada(jornada: Jornada, partido:Partido, idJugador: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically){
+            // Número Jornada:
+            Text(
+                text = "Jornada ${jornada.numero}",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black
+            )
+
+            if(partido.idGanador != null){
+                Spacer(modifier = Modifier.width(8.dp))
+
+                val victoria = partido.idGanador == idJugador
+                // Se encuentra en el file de Statistics View, ya que lo que más sentido tenía era dejarlo ahí aunque se utilice también aquí
+                RachaItem(victoria = victoria, activo = true)
+            }
+        }
+
+
+        // Fechas con icono
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 2.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = Color.Gray
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "${jornada.fechaInicio} - ${jornada.fechaFin}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
 
 // Funciones para la card en la que se mostrará el partido de cada usuario:
 @Composable
@@ -271,7 +324,7 @@ fun ScoreRow(
                 .padding(8.dp),
             color = Color.White,
             fontWeight = FontWeight.Bold,
-            maxLines = 1
+            maxLines = 2
         )
 
         // Columna SETS (No editable, solo visualiza el total)

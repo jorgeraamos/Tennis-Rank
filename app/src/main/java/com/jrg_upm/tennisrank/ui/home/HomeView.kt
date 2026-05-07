@@ -2,19 +2,25 @@ package com.jrg_upm.tennisrank.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -37,6 +43,7 @@ import com.jrg_upm.tennisrank.model.Participante
 import com.jrg_upm.tennisrank.model.Partido
 import com.jrg_upm.tennisrank.model.Set
 import com.jrg_upm.tennisrank.ui.components.ScoreboardCard
+import com.jrg_upm.tennisrank.ui.components.infoJornada
 import com.jrg_upm.tennisrank.viewModel.home.HomeViewModel
 import kotlinx.coroutines.launch
 
@@ -91,21 +98,17 @@ fun HomeScreen(
 
             item {
                 // Ponemos un espacio
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
             item {
                 // Card que contendrá el próximo partido de cada jugador
                 jornadaYPartido?.let { (jornada, partidoConSets) ->
                     val partido = partidoConSets.first
+                    // Mostramos la información de la jornada:
+                    infoJornada(jornada, partido, jugadorActual!!.id)
+
                     // Pasamos los datos reales a la Card
-                    Text(
-                        text = "Jornada ${jornada?.numero}: ${jornada?.fechaInicio} - ${jornada?.fechaFin} ",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.Black,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                        textAlign = TextAlign.Start
-                    )
                     ScoreboardCard(
                         partido,
                         juegosJ1 = homeViewModel.juegosJ1,
@@ -168,7 +171,7 @@ fun HomeScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             item {
@@ -195,13 +198,13 @@ fun HomeScreen(
                     Text(
                         text = "${posicion}. ${jugador.jugador.nombre}",
                         fontWeight = if (esUsuarioActual) FontWeight.ExtraBold else FontWeight.Normal,
-                        color = if (esUsuarioActual) Color.Magenta else Color.DarkGray
+                        color = if (esUsuarioActual) Color(0xFF1976D2) else Color.DarkGray
                     )
                     Text(
                         text = "${jugador.puntos} pts",
                         fontWeight = if (esUsuarioActual) FontWeight.ExtraBold else FontWeight.Normal,
-                        color = if (esUsuarioActual) Color.Magenta.copy(alpha = 0.5f) else Color.DarkGray.copy(
-                            alpha = 0.5f
+                        color = if (esUsuarioActual) Color(0xFF1976D2).copy(alpha = 0.75f) else Color.DarkGray.copy(
+                            alpha = 0.75f
                         )
                     )
                 }
@@ -216,6 +219,7 @@ fun HomeScreen(
         }
     }
 }
+
 
 
 
